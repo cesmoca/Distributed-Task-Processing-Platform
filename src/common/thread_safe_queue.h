@@ -1,27 +1,32 @@
+#pragma once
+
 #include <mutex>
 #include <queue>
 #include <cstdio>
 #include <iostream>
+#include <condition_variable>
 
-class ThreadSafeQueue {
+namespace DTPP {
+	class ThreadSafeQueue {
 
-public:
+	public:
 
-	ThreadSafeQueue() = default;
+		ThreadSafeQueue() = default;
 
-	void push(int value);
-	
-	int waitAndPop();
+		void push(int value);
 
-	bool tryPop(int& value);
+		int waitAndPop();
 
-	bool empty() const;
+		bool tryPop(int& value);
 
-private:
+		bool empty() const;
 
-	mutable std::mutex mutex_;
-	std::queue<int> queue_;
-	std::condition_variable conditionVar_;
+	private:
+
+		mutable std::mutex mutex_;
+		std::queue<int> queue_;
+		std::condition_variable conditionVar_;
 
 
-};
+	};
+}

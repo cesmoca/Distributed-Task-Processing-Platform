@@ -1,5 +1,7 @@
 #include <common/thread_safe_queue.h>
 
+using namespace DTPP;
+
 void ThreadSafeQueue::push(int value) {
 	{
 		std::lock_guard lock{ mutex_ };
@@ -12,17 +14,14 @@ void ThreadSafeQueue::push(int value) {
 int ThreadSafeQueue::waitAndPop() {
 	std::unique_lock lock{ mutex_ };
 
-	if (queue_.empty()) {
-		conditionVar_.wait(lock, [&] {
-			return !queue_.empty();
-		});
+	conditionVar_.wait(lock, [this]() {
+		return !queue_.empty();
+	});
 
-	}
-	else {
-		int value = queue_.front();
-		queue_.pop();
-		return value;
-	}
+
+	int value = queue_.front();
+	queue_.pop();
+	return value;
 
 }
 

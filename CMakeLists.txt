@@ -9,7 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(CTest)
 
 add_library(distributed_task_platform
+ "src/common/task.h"
  "src/common/task.cpp"
+ "src/common/thread_safe_queue.h"
  "src/common/thread_safe_queue.cpp")
 
 target_include_directories(distributed_task_platform
