@@ -1,13 +1,17 @@
 #include <gtest/gtest.h>
 #include <common/thread_safe_queue.h>
 
+using namespace DTPP;
+
 TEST(ThreadSafeQueueTest, WaitAndPop) {
-
 	ThreadSafeQueue queue{};
+	
+	Task task{ 0, "task1", []() { return Task::Result{ DTPP::Task::Status::Failed, "Task 1 failed", -1 }; } };
 
-	queue.push(42);
-	int value = queue.waitAndPop();
+	queue.push(std::move(task));
 
-	EXPECT_EQ(value, 42);
+	Task value = queue.waitAndPop();
 
+	EXPECT_EQ(value.id(), 0);
+	EXPECT_EQ(value.name(), "task1");
 }

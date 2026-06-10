@@ -2,16 +2,16 @@
 
 using namespace DTPP;
 
-void ThreadSafeQueue::push(int value) {
+void ThreadSafeQueue::push(Task task) {
 	{
 		std::lock_guard lock{ mutex_ };
-		queue_.push(value);
+		queue_.push(std::move(task));
 	}
 
 	conditionVar_.notify_one();
 }
 
-int ThreadSafeQueue::waitAndPop() {
+Task ThreadSafeQueue::waitAndPop() {
 	std::unique_lock lock{ mutex_ };
 
 	conditionVar_.wait(lock, [this]() {
@@ -19,17 +19,17 @@ int ThreadSafeQueue::waitAndPop() {
 	});
 
 
-	int value = queue_.front();
+	Task task = std::move(queue_.front());
 	queue_.pop();
-	return value;
+	return task;
 
 }
 
-bool ThreadSafeQueue::tryPop(int& value) {
+bool ThreadSafeQueue::tryPop(Task& task) {
 	std::lock_guard lock{ mutex_ };
 	if (queue_.empty()) return false;
 	else {
-		value = std::move(queue_.front());
+		task = std::move(queue_.front());
 		queue_.pop();
 		return true;
 	}

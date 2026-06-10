@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <string>
-#include <variant>
 #include <cassert>
 #include <functional>
 #include <utility>
@@ -39,11 +38,15 @@ namespace DTPP {
 			int data; // Example of additional data
 		};
 
+
 		Task() = delete;
 		Task(const Task&) = delete;
-		Task operator=(const Task&) = delete;
+		Task& operator=(const Task&) = delete;
+		
+		Task(Task&&) = default;
+		Task& operator=(Task&&) = default;
 
-		Task(std::uint64_t id, const Type& type, const std::string& name) : Task(id, name) {
+		Task(std::uint64_t id, Type type, const std::string& name) : Task(id, name) {
 			assert(false && "Not implemented yet");
 		}
 
@@ -60,17 +63,21 @@ namespace DTPP {
 			return work_();
 		}
 
+		std::uint64_t id() const noexcept { return id_;  }
+		const std::string& name() const noexcept { return name_;  }
+
 
 
 	private:
-
 		std::uint64_t id_;
 		std::string name_;
 		std::function<Result()> work_;
 
-		Task(std::uint64_t id, const std::string& name) : id_(id), name_(name) {}
-
+		Task(std::uint64_t id, std::string name) : id_(id), name_(std::move(name)) {}
 
 
 	};
+
+
 }
+

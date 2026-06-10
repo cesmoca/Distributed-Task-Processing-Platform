@@ -2,9 +2,9 @@
 
 #include <mutex>
 #include <queue>
-#include <cstdio>
-#include <iostream>
 #include <condition_variable>
+
+#include <common/task.h>
 
 namespace DTPP {
 	class ThreadSafeQueue {
@@ -13,18 +13,18 @@ namespace DTPP {
 
 		ThreadSafeQueue() = default;
 
-		void push(int value);
+		void push(Task task);
 
-		int waitAndPop();
+		Task waitAndPop();
 
-		bool tryPop(int& value);
+		bool tryPop(Task& value);
 
 		bool empty() const;
 
 	private:
 
 		mutable std::mutex mutex_;
-		std::queue<int> queue_;
+		std::queue<Task> queue_;
 		std::condition_variable conditionVar_;
 
 

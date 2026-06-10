@@ -12,7 +12,9 @@ add_library(distributed_task_platform
  "src/common/task.h"
  "src/common/task.cpp"
  "src/common/thread_safe_queue.h"
- "src/common/thread_safe_queue.cpp")
+ "src/common/thread_safe_queue.cpp" 
+ "src/worker/worker.h" 
+ "src/worker/worker.cpp")
 
 target_include_directories(distributed_task_platform
     PUBLIC
@@ -42,7 +44,8 @@ if(BUILD_TESTING)
 
     add_executable(distributed_task_platform_tests
      "tests/common/task_test.cpp"
-     "tests/common/thread_safe_queue_test.cpp")
+     "tests/common/thread_safe_queue_test.cpp"
+     "tests/worker/worker_test.cpp")
 
     target_link_libraries(distributed_task_platform_tests
         PRIVATE
