@@ -38,14 +38,6 @@ namespace DTPP {
 			int data; // Example of additional data
 		};
 
-
-		Task() = delete;
-		Task(const Task&) = delete;
-		Task& operator=(const Task&) = delete;
-		
-		Task(Task&&) = default;
-		Task& operator=(Task&&) = default;
-
 		Task(std::uint64_t id, Type type, const std::string& name) : Task(id, name) {
 			assert(false && "Not implemented yet");
 		}

@@ -13,6 +13,14 @@ namespace DTPP {
 
 		ThreadSafeQueue() = default;
 
+		// Deleting copy and moving, because it owns a mutex and 
+		//  condition_variable. This object should not be
+		//  changing ownership
+		ThreadSafeQueue(const ThreadSafeQueue&) = delete;
+		ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
+		ThreadSafeQueue(const ThreadSafeQueue&&) = delete;
+		ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
+
 		void push(Task task);
 
 		Task waitAndPop();

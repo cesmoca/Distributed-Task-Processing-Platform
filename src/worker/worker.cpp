@@ -9,8 +9,8 @@ void Worker::start() {
 	std::cout << std::format("[Worker {}] Starting worker thread...\n", id_);
 
 	// Worker thread logic goes here
-	// TODO
-
+	// TODO Just running run for now
+	run();
 }
 
 void Worker::stop() {
@@ -20,13 +20,15 @@ void Worker::stop() {
 	// TODO
 
 	//stopToken_.request_stop();
+	stopToken_stopRequested_ = true;
 
 }
 
 void Worker::run() {
 	std::cout << std::format("[Worker {}] Running worker thread...\n", id_);
 
-	while (!stopToken_.stop_requested()) {
+	//while (!stopToken_.stop_requested()) {
+	while (!stopToken_stopRequested_) {
 
 		Task task = queue_.waitAndPop(); // Wait for a task to be available in the queue
 
