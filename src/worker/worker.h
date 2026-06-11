@@ -26,11 +26,9 @@ namespace DTPP {
 	private:
 		std::uint64_t id_;
 		ThreadSafeQueue& queue_;
-		// Using a fake stop token for the time being
-		//std::stop_token stopToken_;
-		bool stopToken_stopRequested_ = false;
+		std::jthread thread_;
 
-		void run();
+		void run(std::stop_token stopToken);
 
 	};
 }

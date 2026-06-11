@@ -2,7 +2,7 @@
 
 using namespace DTPP;
 
-void ThreadSafeQueue::push(Task task) {
+void ThreadSafeQueue::push(std::unique_ptr<Task> task) {
 	{
 		std::lock_guard lock{ mutex_ };
 		queue_.push(std::move(task));
@@ -11,31 +11,40 @@ void ThreadSafeQueue::push(Task task) {
 	conditionVar_.notify_one();
 }
 
-Task ThreadSafeQueue::waitAndPop() {
+std::unique_ptr<Task> ThreadSafeQueue::waitAndPop() {
 	std::unique_lock lock{ mutex_ };
 
 	conditionVar_.wait(lock, [this]() {
-		return !queue_.empty();
+		return !queue_.empty() || stopping_;
 	});
 
+	// Exit the wait because we are done, not because
+	if (stopping_) return nullptr;
 
-	Task task = std::move(queue_.front());
+	auto task = std::move(queue_.front());
 	queue_.pop();
 	return task;
 
 }
 
-bool ThreadSafeQueue::tryPop(Task& task) {
+std::unique_ptr<Task> ThreadSafeQueue::tryPopOrNull() {
 	std::lock_guard lock{ mutex_ };
-	if (queue_.empty()) return false;
-	else {
-		task = std::move(queue_.front());
+	if (queue_.empty()) {
+		return nullptr;
+	}else {
+		auto task = std::move(queue_.front());
 		queue_.pop();
-		return true;
+		return task;
 	}
 }
 
 bool ThreadSafeQueue::empty() const {
 	std::lock_guard lock{ mutex_ };
 	return queue_.empty();
+}
+
+void ThreadSafeQueue::stop() {
+	std::lock_guard lock{ mutex_ };
+	stopping_ = true;
+	conditionVar_.notify_all();
 }

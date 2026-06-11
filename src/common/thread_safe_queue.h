@@ -3,6 +3,7 @@
 #include <mutex>
 #include <queue>
 #include <condition_variable>
+#include <memory>
 
 #include <common/task.h>
 
@@ -21,20 +22,22 @@ namespace DTPP {
 		ThreadSafeQueue(const ThreadSafeQueue&&) = delete;
 		ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
 
-		void push(Task task);
+		void push(std::unique_ptr<Task> task);
 
-		Task waitAndPop();
+		std::unique_ptr<Task> waitAndPop();
 
-		bool tryPop(Task& value);
+		std::unique_ptr<Task> tryPopOrNull();
 
 		bool empty() const;
+
+		void stop();
 
 	private:
 
 		mutable std::mutex mutex_;
-		std::queue<Task> queue_;
+		std::queue<std::unique_ptr<Task>> queue_;
 		std::condition_variable conditionVar_;
-
+		bool stopping_ = false;
 
 	};
 }

@@ -7,6 +7,7 @@
 #include <random>
 #include <utility>
 #include <format>
+#include <memory>
 
 #include <common/thread_safe_queue.h>
 #include <common/task.h>
@@ -20,39 +21,51 @@ std::uint64_t randomInt(int min, int max)
 	return dist(gen);
 }
 
-DTPP::Task createTask(std::uint64_t id) {
-	DTPP::Task task{ id, std::format("task {}", id),[id]() {
+std::unique_ptr<DTPP::Task> createTask(std::uint64_t id) {
+
+	return std::make_unique<DTPP::Task>(id, std::format("task {}", id),[id]() {
 
 		std::cout << std::format("[task {}] Executing...\n", id);
 
-		int waitTimeMs = randomInt(250, 1000);
+		int waitTimeMs = randomInt(1000, 3000);
 		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
 
 		std::cout << std::format("[task {}] Finished!\n", id);
 
 		return DTPP::Task::Result{ DTPP::Task::Status::Completed, "Task 1 completed successfully", 0 };
 
-	} };
+	});
 
-	return task;
 }
 
 int main(int argc, char* argv[]) {
 
 	const int nWorkers = 4;
-	const int nTasks = 10;
+	const int nTasks = 8;
 	DTPP::ThreadSafeQueue queue{};
 
 	DTPP::WorkerPool workerPool{ queue };
+	workerPool.start(nWorkers);
 
 	// Let's simulate tasks coming to the queue
 	for (std::uint64_t i = 0; i < nTasks; ++i) {
 		queue.push(createTask(i));
+		int waitTimeMs = randomInt(250, 1000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
 	}
 
-	workerPool.start(nWorkers);
-
-
+	// Main loop
+	while (true) {
+		if (queue.empty()) {
+			queue.stop();
+			workerPool.stop();
+			std::cout << std::format("[Main Loop] Work finished, bye!\n");
+			break;
+		}
+		else {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+	}
 
 	return 0;
 }

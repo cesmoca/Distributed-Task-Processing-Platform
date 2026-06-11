@@ -36,28 +36,31 @@ namespace DTPP {
 			Status status;
 			std::string message;
 			int data; // Example of additional data
+
+			std::string toString() const {
+				switch (status) {
+				case Status::Pending: return "Pending";
+				case Status::Running: return "Running";
+				case Status::Completed: return "Completed";
+				case Status::Failed: return "Failed";
+				default: assert("Not all Task::Result implemented in toString");
+
+				}
+			}
 		};
 
-		Task(std::uint64_t id, Type type, const std::string& name) : Task(id, name) {
-			assert(false && "Not implemented yet");
-		}
+
+		Task(std::uint64_t id, Type type, const std::string& name);
 
 		template<typename Callable>
 		Task(std::uint64_t id, const std::string& name, Callable&& work) : Task(id, name) {
 			work_ = std::forward<Callable>(work);
 		}
 
-		Result execute() const {
-			// TODO: at some point we might need to check
-			//  if(work_) before calling it, but for now we will
-			//  it will always be set by the constructor, so we 
-			//  can skip that check
-			return work_();
-		}
+		Result execute() const;
 
-		std::uint64_t id() const noexcept { return id_;  }
-		const std::string& name() const noexcept { return name_;  }
-
+		std::uint64_t id() const noexcept { return id_; }
+		const std::string& name() const noexcept { return name_; }
 
 
 	private:
