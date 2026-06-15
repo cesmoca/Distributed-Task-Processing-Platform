@@ -21,7 +21,7 @@ namespace DTPP {
 		ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
 		ThreadSafeQueue(const ThreadSafeQueue&&) = delete;
 		ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
-
+		virtual ~ThreadSafeQueue() = default;
 		void push(std::unique_ptr<Task> task);
 
 		std::unique_ptr<Task> waitAndPop();

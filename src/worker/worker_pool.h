@@ -18,7 +18,7 @@ namespace DTPP {
 
 	private:
 		ThreadSafeQueue& queue_;
-		std::vector<Worker> workers_;
+		std::vector<Worker<ThreadSafeQueue>> workers_;
 
 	};
 

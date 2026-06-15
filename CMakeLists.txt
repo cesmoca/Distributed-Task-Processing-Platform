@@ -14,7 +14,7 @@ add_library(distributed_task_platform
  "src/common/thread_safe_queue.h"
  "src/common/thread_safe_queue.cpp" 
  "src/worker/worker.h" 
- "src/worker/worker.cpp" 
+ "src/worker/worker_impl.h" 
  "src/worker/worker_pool.h" 
  "src/worker/worker_pool.cpp")
 
@@ -49,6 +49,11 @@ if(BUILD_TESTING)
      "tests/common/thread_safe_queue_test.cpp"
      "tests/worker/worker_test.cpp"
      "tests/worker/worker_pool_test.cpp")
+
+    target_include_directories(distributed_task_platform_tests
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
 
     target_link_libraries(distributed_task_platform_tests
         PRIVATE

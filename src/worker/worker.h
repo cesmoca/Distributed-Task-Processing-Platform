@@ -5,10 +5,11 @@
 
 namespace DTPP {
 
+	template<typename Queue>
 	class Worker {
 
 	public:
-		Worker(std::uint64_t id, ThreadSafeQueue& queue) : id_(id), queue_(queue) {}
+		Worker(std::uint64_t id, Queue& queue) : id_(id), queue_(queue) {}
 
 		// This class owns a std::jthread, so it has to be
 		//  movable, but not copyable
@@ -25,10 +26,12 @@ namespace DTPP {
 
 	private:
 		std::uint64_t id_;
-		ThreadSafeQueue& queue_;
+		Queue& queue_;
 		std::jthread thread_;
 
 		void run(std::stop_token stopToken);
 
 	};
 }
+
+#include <worker/worker_impl.h>
