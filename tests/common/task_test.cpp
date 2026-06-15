@@ -3,13 +3,23 @@
 
 using namespace DTPP;
 
-TEST(TaskTest, Execute) {
-	
-	Task task1{ 0, "task1", []() {
+TEST(TaskTest, Ctr) {
+
+	Task task{ 0, "task", []() {
 		return Task::Result{ Task::Status::Completed, "Task completed successfully", 42 };
 	} };
 
-	Task::Result result = task1.execute();
+	EXPECT_EQ(task.id(), 0);
+	EXPECT_EQ(task.name(), "task");
+}
+
+TEST(TaskTest, Execute) {
+	
+	Task task{ 0, "task", []() {
+		return Task::Result{ Task::Status::Completed, "Task completed successfully", 42 };
+	} };
+
+	Task::Result result = task.execute();
 
 	EXPECT_EQ(result.status, Task::Status::Completed);
 	EXPECT_EQ(result.message, "Task completed successfully");
