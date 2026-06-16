@@ -5,10 +5,10 @@
 namespace DTPP {
 
 	template<typename Queue>
-	void WorkerPool<Queue>::start(int workerCount) {
+	void WorkerPool<Queue>::start() {
 
 		// Create and start the worker counts
-		for (int i = 0; i < workerCount; ++i) {
+		for (int i = 0; i < workerCount_; ++i) {
 			workers_.emplace_back(static_cast<std::uint64_t>(i), queue_);
 		}
 

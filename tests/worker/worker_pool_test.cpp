@@ -9,9 +9,9 @@ TEST(WorkerPool, StartStopTest) {
 	FakeQueue queue{};
 
 	int workerCount = 1;
-	WorkerPool<FakeQueue> workerPool(queue);
+	WorkerPool<FakeQueue> workerPool(queue, workerCount);
 
-	workerPool.start(workerCount);
+	workerPool.start();
 
 	queue.stop(); // The workers are waiting at the condition var
 	workerPool.stop();

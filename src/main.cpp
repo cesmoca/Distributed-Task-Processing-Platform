@@ -44,8 +44,8 @@ int main(int argc, char* argv[]) {
 	const int nTasks = 8;
 	DTPP::ThreadSafeQueue queue{};
 
-	DTPP::WorkerPool workerPool{ queue };
-	workerPool.start(nWorkers);
+	DTPP::WorkerPool workerPool{ queue, nWorkers };
+	workerPool.start();
 
 	// Let's simulate tasks coming to the queue
 	for (std::uint64_t i = 0; i < nTasks; ++i) {

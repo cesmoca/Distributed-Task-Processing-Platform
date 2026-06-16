@@ -12,16 +12,17 @@ namespace DTPP {
 	class WorkerPool{
 
 	public:
-		WorkerPool(Queue& queue) : queue_(queue) {}
+		WorkerPool(Queue& queue, int workerCount) : queue_(queue), workerCount_(workerCount) {}
 
-		void start(int workerCount);
+		void start();
 		
 		void stop();
 
 	private:
 		Queue& queue_;
+		int workerCount_;
 		std::vector<Worker<Queue>> workers_;
-
+		
 	};
 
 }
