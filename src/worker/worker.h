@@ -21,8 +21,9 @@ namespace DTPP {
 		Worker& operator=(Worker&&) = default;
 
 		void start();
+		void join();
 
-		void stop();
+		void requestStop();
 
 	private:
 		std::uint64_t id_;

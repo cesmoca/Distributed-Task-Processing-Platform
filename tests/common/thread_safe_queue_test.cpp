@@ -97,7 +97,7 @@ TEST(ThreadSafeQueueTest, Stop) {
 	});
 
 	std::future<void> future = promise.get_future();
-	future.get(); // Wait for producer to be ready to stop
+	future.get(); // Wait for producer to be ready to requestStop
 
 	auto value = queue.waitAndPop();
 	EXPECT_EQ(nullptr, value);

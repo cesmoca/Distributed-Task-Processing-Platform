@@ -27,7 +27,7 @@ std::unique_ptr<DTPP::Task> createTask(std::uint64_t id) {
 
 		std::cout << std::format("[task {}] Executing...\n", id);
 
-		int waitTimeMs = randomInt(1000, 3000);
+		int waitTimeMs = randomInt(500, 1500);
 		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
 
 		std::cout << std::format("[task {}] Finished!\n", id);
@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 	// Let's simulate tasks coming to the queue
 	for (std::uint64_t i = 0; i < nTasks; ++i) {
 		queue.push(createTask(i));
-		int waitTimeMs = randomInt(250, 1000);
+		int waitTimeMs = randomInt(100, 500);
 		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
 	}
 

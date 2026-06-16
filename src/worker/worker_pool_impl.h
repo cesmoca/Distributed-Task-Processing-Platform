@@ -22,7 +22,8 @@ namespace DTPP {
 
 		// Stop all the workers
 		for (auto& worker : workers_) {
-			worker.stop();
+			worker.requestStop();
+			worker.join();
 		}
 
 	}

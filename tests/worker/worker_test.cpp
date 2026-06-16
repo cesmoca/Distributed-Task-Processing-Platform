@@ -33,7 +33,7 @@ TEST(WorkerTest, StartStop) {
 	// Now there is an element, so it should execute the task
 	EXPECT_EQ(true, fakeTaskExecuted);
 
-	// Now let's stop it, no task should be executed
+	// Now let's requestStop it, no task should be executed
 	fakeTaskExecuted = false;
 	taskExecutedPromise = std::promise<void>{};
 	queue.resetFake();
@@ -43,7 +43,8 @@ TEST(WorkerTest, StartStop) {
 
 	EXPECT_EQ(false, fakeTaskExecuted);
 
-	worker.stop(); // This is a blocking API, joins the thread
+	worker.requestStop(); // This is a blocking API, joins the thread
+	worker.join();
 
 	std::cout << std::format("Worker test ended.\n");
 }

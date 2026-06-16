@@ -15,13 +15,14 @@ namespace DTPP {
 	}
 
 	template<typename Queue>
-	void Worker<Queue>::stop() {
+	void Worker<Queue>::requestStop() {
 		std::cout << std::format("[Worker {}] Stopping worker thread...\n", id_);
 
-		// Logic to stop the worker thread goes here
 		thread_.get_stop_source().request_stop();
+	}
+	template<typename Queue>
+	void Worker<Queue>::join() {
 		thread_.join();
-
 		std::cout << std::format("[Worker {}] Stopped.\n", id_);
 	}
 
