@@ -2,6 +2,7 @@
 #include <common/thread_safe_queue.h>
 #include <memory>
 #include <future>
+#include <format>
 
 using namespace DTPP;
 
@@ -18,9 +19,10 @@ TEST(ThreadSafeQueueTest, Push) {
 	EXPECT_EQ(task->id(), 0);
 	EXPECT_EQ(task->name(), "task");
 
+	std::cout << std::format("ThreadSafeQueueTest ended\n");
 }
 
-TEST(ThreadSafeQueueTest, WaitAndPopEmpty) {
+TEST(ThreadSafeQueueTest, WaitAndPopEmptyQueue) {
 	ThreadSafeQueue queue{};
 	
 	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ DTPP::Task::Status::Failed, "Task 1 failed", -1 }; } ));
@@ -29,6 +31,17 @@ TEST(ThreadSafeQueueTest, WaitAndPopEmpty) {
 
 	EXPECT_EQ(value->id(), 0);
 	EXPECT_EQ(value->name(), "task");
+}
+
+TEST(ThreadSafeQueueTest, WaitAndPopStoppingBeforeWait) {
+	ThreadSafeQueue queue{};
+
+	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ DTPP::Task::Status::Failed, "Task 1 failed", -1 }; }));
+
+	queue.stop();
+	auto value = queue.waitAndPop();
+
+	EXPECT_EQ(nullptr, value);
 }
 
 TEST(ThreadSafeQueueTest, WaitAndPopWaitsForTasks) {

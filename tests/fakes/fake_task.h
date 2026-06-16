@@ -12,6 +12,7 @@ public:
 
 	DTPP::Task::Result execute() {
 		executeCalled = true;
+		work_();
 		return taskResult;
 	}
 

@@ -16,7 +16,7 @@ add_library(distributed_task_platform
  "src/worker/worker.h" 
  "src/worker/worker_impl.h" 
  "src/worker/worker_pool.h" 
- "src/worker/worker_pool.cpp")
+ "src/worker/worker_pool_impl.h")
 
 target_include_directories(distributed_task_platform
     PUBLIC

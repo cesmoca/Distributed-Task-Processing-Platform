@@ -13,9 +13,13 @@ class FakeQueue {
 public:
 
 	void push(std::unique_ptr<FakeTask> task) {
-		pushCalled = true;
-		queue.push_back(std::move(task));
+		{
+			std::lock_guard lock{ mutex_ };
+			queue.push_back(std::move(task));
+		}
 		conditionVar_.notify_one();
+		pushCalled = true;
+
 	}
 
 
@@ -26,11 +30,14 @@ public:
 		promise.set_value();
 
 		conditionVar_.wait(lock, [this]() {
-			return !queue.empty();
+			return !queue.empty() || stopping_;
 		});
 
+		if (stopping_) return nullptr;
+		
 		auto value = std::move(queue.front());
 		queue.pop_back();
+
 		return value;
 	}
 
@@ -39,11 +46,18 @@ public:
 	}
 
 	bool empty() {
+		std::lock_guard lock{ mutex_ };
 		emptyCalled = true;
 		return queue.empty();
 	}
 
 	void stop() {
+		{
+			std::lock_guard lock{ mutex_ };
+			stopping_ = true;
+		}
+
+		conditionVar_.notify_all();
 		stopCalled = true;
 	}
 
@@ -53,7 +67,9 @@ public:
 		tryPopOrNullCalled = false;
 		emptyCalled = false;
 		stopCalled = false;
+		stopping_ = false;
 		queue.clear();
+		promise = std::promise<void>{};
 	}
 
 	bool pushCalled = false;
@@ -70,4 +86,5 @@ public:
 private:
 	std::condition_variable conditionVar_;
 	mutable std::mutex mutex_;
+	bool stopping_ = false;
 };

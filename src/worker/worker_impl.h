@@ -21,6 +21,8 @@ namespace DTPP {
 		// Logic to stop the worker thread goes here
 		thread_.get_stop_source().request_stop();
 		thread_.join();
+
+		std::cout << std::format("[Worker {}] Stopped.\n", id_);
 	}
 
 	template<typename Queue>
@@ -33,6 +35,10 @@ namespace DTPP {
 			if (task) {
 				std::cout << std::format("[Worker {}] Executing task {}...\n", id_, task->id());
 				task->execute();
+			}
+			else {
+				// Means we are stopping, so let's get out
+				break;
 			}
 		}
 

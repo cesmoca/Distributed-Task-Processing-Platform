@@ -6,20 +6,24 @@
 #include <worker/worker.h>
 
 namespace DTPP {
+
+	template <typename Queue>
 	
 	class WorkerPool{
-	public:
 
-		WorkerPool(ThreadSafeQueue& queue) : queue_(queue) {}
+	public:
+		WorkerPool(Queue& queue) : queue_(queue) {}
 
 		void start(int workerCount);
 		
 		void stop();
 
 	private:
-		ThreadSafeQueue& queue_;
-		std::vector<Worker<ThreadSafeQueue>> workers_;
+		Queue& queue_;
+		std::vector<Worker<Queue>> workers_;
 
 	};
 
 }
+
+#include <worker/worker_pool_impl.h>
