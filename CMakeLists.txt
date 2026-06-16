@@ -16,7 +16,9 @@ add_library(distributed_task_platform
  "src/worker/worker.h" 
  "src/worker/worker_impl.h" 
  "src/worker/worker_pool.h" 
- "src/worker/worker_pool_impl.h")
+ "src/worker/worker_pool_impl.h" 
+ "src/scheduler/scheduler.h"
+ "src/scheduler/scheduler_impl.h")
 
 target_include_directories(distributed_task_platform
     PUBLIC
@@ -48,7 +50,8 @@ if(BUILD_TESTING)
      "tests/common/task_test.cpp"
      "tests/common/thread_safe_queue_test.cpp"
      "tests/worker/worker_test.cpp"
-     "tests/worker/worker_pool_test.cpp")
+     "tests/worker/worker_pool_test.cpp" 
+     "tests/scheduler/scheduler_test.cpp" "src/scheduler/scheduler_impl.h")
 
     target_include_directories(distributed_task_platform_tests
         PRIVATE

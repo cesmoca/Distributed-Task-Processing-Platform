@@ -8,7 +8,6 @@
 namespace DTPP {
 
 	template <typename Queue>
-	
 	class WorkerPool{
 
 	public:
