@@ -8,7 +8,7 @@ namespace DTPP {
 	void Worker<Queue>::start() {
 		std::cout << std::format("[Worker {}] Starting worker thread...\n", id_);
 
-		thread_ = std::jthread{ [&](std::stop_token stopToken) {
+		thread_ = std::jthread{ [this](std::stop_token stopToken) {
 			run(stopToken);
 		} };
 

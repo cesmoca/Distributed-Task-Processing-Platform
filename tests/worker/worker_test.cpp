@@ -3,19 +3,23 @@
 #include <fakes/fake_queue.h>
 #include <fakes/fake_task.h>
 #include <utility>
+#include <functional>
 
 using namespace DTPP;
 
+std::unique_ptr<FakeTask> createFakeTask(std::function<Task::Result()> work) {
+	return std::make_unique<FakeTask>(0, "FakeTask", work);
+}
 TEST(WorkerTest, StartStop) {
 	FakeQueue queue{};
 	std::promise<void> taskExecutedPromise{};
 
 	bool fakeTaskExecuted = false;
-	auto fakeTask = std::make_unique<FakeTask>(0, "FakeTask", [&]() { 
+	auto work = [&]() { 
 		fakeTaskExecuted = true;
 		taskExecutedPromise.set_value();
 		return Task::Result{ Task::Status::Completed, "Completed", 0 };
-	});
+	};
 
 	Worker<FakeQueue> worker{0, queue};
 	worker.start();
@@ -27,7 +31,7 @@ TEST(WorkerTest, StartStop) {
 	EXPECT_EQ(false, fakeTaskExecuted);
 	queue.resetFake();
 
-	queue.push(std::move(fakeTask));
+	queue.push(createFakeTask(work));
 	taskExecutedPromise.get_future().get(); // Wait for the worker to get the task
 	
 	// Now there is an element, so it should execute the task
@@ -39,7 +43,7 @@ TEST(WorkerTest, StartStop) {
 	queue.resetFake();
 
 	queue.stop();
-	queue.push(std::move(fakeTask));
+	queue.push(createFakeTask(work));
 
 	EXPECT_EQ(false, fakeTaskExecuted);
 

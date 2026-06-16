@@ -19,9 +19,9 @@ namespace DTPP {
 		//  changing ownership
 		ThreadSafeQueue(const ThreadSafeQueue&) = delete;
 		ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
-		ThreadSafeQueue(const ThreadSafeQueue&&) = delete;
+		ThreadSafeQueue(ThreadSafeQueue&&) = delete;
 		ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
-		virtual ~ThreadSafeQueue() = default;
+		~ThreadSafeQueue() = default;
 		void push(std::unique_ptr<Task> task);
 
 		std::unique_ptr<Task> waitAndPop();

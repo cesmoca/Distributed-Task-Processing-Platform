@@ -43,6 +43,7 @@ public:
 
 	std::unique_ptr<FakeTask> tryPopOrNull() {
 		tryPopOrNullCalled = true;
+		return nullptr;
 	}
 
 	bool empty() {

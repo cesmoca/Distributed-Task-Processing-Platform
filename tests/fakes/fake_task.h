@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <functional>
+#include <utility>
 
 class FakeTask {
 public:

@@ -6,6 +6,7 @@
 #include <cassert>
 #include <functional>
 #include <utility>
+#include <stdexcept>
 
 namespace DTPP {
 
@@ -43,8 +44,7 @@ namespace DTPP {
 				case Status::Running: return "Running";
 				case Status::Completed: return "Completed";
 				case Status::Failed: return "Failed";
-				default: assert("Not all Task::Result implemented in toString");
-
+				default: throw std::logic_error("Not all Task::Result implemented in toString");
 				}
 			}
 		};
