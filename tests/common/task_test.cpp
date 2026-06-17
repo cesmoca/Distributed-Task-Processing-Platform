@@ -5,17 +5,16 @@ using namespace DTPP;
 
 TEST(TaskTest, Ctr) {
 
-	Task task{ 0, "task", []() {
+	Task task{ 0, []() {
 		return Task::Result{ true, "Task completed successfully", 42 };
 	} };
 
 	EXPECT_EQ(task.info().id, 0);
-	EXPECT_EQ(task.info().name, "task");
 }
 
 TEST(TaskTest, Execute) {
 	
-	Task task{ 0, "task", []() {
+	Task task{ 0, []() {
 		return Task::Result{ true, "Task completed successfully", 42 };
 	} };
 

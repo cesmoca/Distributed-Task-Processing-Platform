@@ -9,7 +9,7 @@ class FakeTask {
 public:
 
 	template<typename Callable>
-	FakeTask(std::uint64_t id, const std::string& name, Callable&& work) : FakeTask(id, name) {
+	FakeTask(std::uint64_t id, Callable&& work) : FakeTask(id) {
 		work_ = std::forward<Callable>(work);
 	}
 
@@ -33,6 +33,6 @@ private:
 	DTPP::Task::Info info_;
 	std::function<DTPP::Task::Result()> work_;
 
-	FakeTask(DTPP::Task::Id id, const std::string& name) : info_(id, name) {}
+	FakeTask(DTPP::Task::Id id) : info_(id) {}
 
 };

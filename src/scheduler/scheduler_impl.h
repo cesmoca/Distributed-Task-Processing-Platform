@@ -12,7 +12,6 @@ namespace DTPP {
 		queue_.push(
 			std::make_unique<Task>(
 				id,
-				std::format("Task {}", id),
 				std::forward<Callable>(task)
 			)
 		);

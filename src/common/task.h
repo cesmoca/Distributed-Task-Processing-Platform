@@ -36,7 +36,6 @@ namespace DTPP {
 
 		struct Info {
 			Id id;
-			std::string name;
 			Status status;
 
 			std::string toString() const {
@@ -68,7 +67,7 @@ namespace DTPP {
 		//Task(std::uint64_t id, Type type, const std::string& name);
 
 		template<typename Callable>
-		Task(std::uint64_t id, const std::string& name, Callable&& work) : Task(id, name) {
+		Task(Id id, Callable&& work) : Task(id) {
 			work_ = std::forward<Callable>(work);
 		}
 
@@ -80,7 +79,7 @@ namespace DTPP {
 		Info info_;
 		std::function<Result()> work_;
 
-		Task(Id id, std::string name) : info_(id, name) {}
+		Task(Id id) : info_(id) {}
 
 	};
 

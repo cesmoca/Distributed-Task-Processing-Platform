@@ -8,7 +8,7 @@
 using namespace DTPP;
 
 std::unique_ptr<FakeTask> createFakeTask(std::function<Task::Result()> work) {
-	return std::make_unique<FakeTask>(0, "FakeTask", work);
+	return std::make_unique<FakeTask>(0, work);
 }
 TEST(WorkerTest, StartStop) {
 	FakeQueue queue{};
