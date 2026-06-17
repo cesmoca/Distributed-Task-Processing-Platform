@@ -7,12 +7,16 @@
 #include <functional>
 #include <utility>
 #include <stdexcept>
+#include <format>
 
 namespace DTPP {
 
 	class Task
 	{
 	public:
+
+		using Id = std::uint64_t;
+
 		// TODO: Not using by now. We are implementing a callable based task,
 		//  for simple implementation. In the future we will add types
 		//  when using Networking integration, since a callable can
@@ -30,13 +34,10 @@ namespace DTPP {
 			Failed
 		};
 
-		// TODO: We are starting with just an enum, but in the future
-		//  we can use a more complex structure, allowing for example
-		//  to return all kinds of data. We can use variant for that
-		struct Result {
+		struct Info {
+			Id id;
+			std::string name;
 			Status status;
-			std::string message;
-			int data; // Example of additional data
 
 			std::string toString() const {
 				switch (status) {
@@ -49,30 +50,39 @@ namespace DTPP {
 			}
 		};
 
+		// TODO: We are starting with just an enum, but in the future
+		//  we can use a more complex structure, allowing for example
+		//  to return all kinds of data. We can use variant for that
+		struct Result {
+			bool success;
+			std::string message;
+			int data; // Example of additional data
 
-		Task(std::uint64_t id, Type type, const std::string& name);
+
+			std::string toString() const {
+				return std::format("Result {}: {}", success ? "Succeded" : "Failed", message);
+			}
+		};
+
+
+		//Task(std::uint64_t id, Type type, const std::string& name);
 
 		template<typename Callable>
 		Task(std::uint64_t id, const std::string& name, Callable&& work) : Task(id, name) {
 			work_ = std::forward<Callable>(work);
 		}
 
+		Info info() const noexcept { return info_; }
 		Result execute() const;
-
-		std::uint64_t id() const noexcept { return id_; }
-		const std::string& name() const noexcept { return name_; }
 
 
 	private:
-		std::uint64_t id_;
-		std::string name_;
+		Info info_;
 		std::function<Result()> work_;
 
-		Task(std::uint64_t id, std::string name) : id_(id), name_(std::move(name)) {}
-
+		Task(Id id, std::string name) : info_(id, name) {}
 
 	};
-
 
 }
 

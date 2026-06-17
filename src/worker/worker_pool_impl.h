@@ -9,7 +9,9 @@ namespace DTPP {
 
 		// Create and start the worker counts
 		for (int i = 0; i < workerCount_; ++i) {
-			workers_.emplace_back(static_cast<std::uint64_t>(i), queue_);
+			int id = nextId_;
+			nextId_++;
+			workers_.emplace_back(nextId_, queue_);
 		}
 
 		for (auto& w : workers_) {

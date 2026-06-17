@@ -30,7 +30,7 @@ std::function<DTPP::Task::Result()> createTask() {
 		int waitTimeMs = randomInt(500, 1500);
 		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
 
-		return DTPP::Task::Result{ DTPP::Task::Status::Completed, "Task 1 completed successfully", 0 };
+		return DTPP::Task::Result{ true, "Task 1 completed successfully", 0 };
 	};
 }
 

@@ -9,7 +9,10 @@ namespace DTPP {
 	class Worker {
 
 	public:
-		Worker(std::uint64_t id, Queue& queue) : id_(id), queue_(queue) {}
+
+		using Id = std::uint64_t;
+
+		Worker(Id id, Queue& queue) : id_(id), queue_(queue) {}
 
 		// This class owns a std::jthread, so it has to be
 		//  movable, but not copyable
@@ -26,7 +29,7 @@ namespace DTPP {
 		void requestStop();
 
 	private:
-		std::uint64_t id_;
+		Id id_;
 		Queue& queue_;
 		std::jthread thread_;
 

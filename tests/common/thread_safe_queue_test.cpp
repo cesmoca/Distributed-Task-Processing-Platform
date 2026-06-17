@@ -11,13 +11,13 @@ TEST(ThreadSafeQueueTest, Push) {
 
 	EXPECT_TRUE(queue.empty());
 
-	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ DTPP::Task::Status::Failed, "Task 1 failed", -1 }; }));
+	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
 	auto task = queue.tryPopOrNull();
 
 	EXPECT_TRUE(task != nullptr);
-	EXPECT_EQ(task->id(), 0);
-	EXPECT_EQ(task->name(), "task");
+	EXPECT_EQ(task->info().id, 0);
+	EXPECT_EQ(task->info().name, "task");
 
 	std::cout << std::format("ThreadSafeQueueTest ended\n");
 }
@@ -25,18 +25,18 @@ TEST(ThreadSafeQueueTest, Push) {
 TEST(ThreadSafeQueueTest, WaitAndPopEmptyQueue) {
 	ThreadSafeQueue queue{};
 	
-	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ DTPP::Task::Status::Failed, "Task 1 failed", -1 }; } ));
+	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ false, "Task 1 failed", -1 }; } ));
 
 	auto value = queue.waitAndPop();
 
-	EXPECT_EQ(value->id(), 0);
-	EXPECT_EQ(value->name(), "task");
+	EXPECT_EQ(value->info().id, 0);
+	EXPECT_EQ(value->info().name, "task");
 }
 
 TEST(ThreadSafeQueueTest, WaitAndPopStoppingBeforeWait) {
 	ThreadSafeQueue queue{};
 
-	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ DTPP::Task::Status::Failed, "Task 1 failed", -1 }; }));
+	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
 	queue.stop();
 	auto value = queue.waitAndPop();
@@ -52,7 +52,7 @@ TEST(ThreadSafeQueueTest, WaitAndPopWaitsForTasks) {
 	//  a worker waiting for a task
 	std::jthread producer([&] {
 		promise.set_value();
-		queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ DTPP::Task::Status::Failed, "Task 1 failed", -1 }; }));
+		queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
 	});
 
@@ -60,20 +60,20 @@ TEST(ThreadSafeQueueTest, WaitAndPopWaitsForTasks) {
 	future.get(); // Wait for producer to be ready
 
 	auto value = queue.waitAndPop();
-	EXPECT_EQ(value->id(), 0);
-	EXPECT_EQ(value->name(), "task");
+	EXPECT_EQ(value->info().id, 0);
+	EXPECT_EQ(value->info().name, "task");
 }
 
 TEST(ThreadSafeQueueTest, TryPopOrNull_NotNull) {
 	ThreadSafeQueue queue{};
 
-	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ DTPP::Task::Status::Failed, "Task 1 failed", -1 }; }));
+	queue.push(std::make_unique<Task>(0, "task", []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
 	auto task = queue.tryPopOrNull();
 
 	EXPECT_TRUE(task != nullptr);
-	EXPECT_EQ(task->id(), 0);
-	EXPECT_EQ(task->name(), "task");
+	EXPECT_EQ(task->info().id, 0);
+	EXPECT_EQ(task->info().name, "task");
 }
 
 TEST(ThreadSafeQueueTest, TryPopOrNull_Null) {

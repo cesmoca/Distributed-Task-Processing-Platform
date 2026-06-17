@@ -18,7 +18,7 @@ TEST(WorkerTest, StartStop) {
 	auto work = [&]() { 
 		fakeTaskExecuted = true;
 		taskExecutedPromise.set_value();
-		return Task::Result{ Task::Status::Completed, "Completed", 0 };
+		return Task::Result{ true, "Completed", 0 };
 	};
 
 	Worker<FakeQueue> worker{0, queue};

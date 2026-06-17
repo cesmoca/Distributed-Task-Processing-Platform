@@ -19,10 +19,9 @@ public:
 		return taskResult;
 	}
 
-	std::uint64_t id() const noexcept { return id_; }
-	const std::string& name() const noexcept { return name_; }
+	DTPP::Task::Info info() const noexcept { return info_; }
 
-	DTPP::Task::Result taskResult = DTPP::Task::Result{ DTPP::Task::Status::Completed, "Completed", 0 };
+	DTPP::Task::Result taskResult = DTPP::Task::Result{ true, "Completed", 0 };
 
 	void resetFake() {
 		executeCalled = false;
@@ -31,10 +30,9 @@ public:
 	bool executeCalled = false;
 
 private:
-	std::uint64_t id_;
-	std::string name_;
+	DTPP::Task::Info info_;
 	std::function<DTPP::Task::Result()> work_;
 
-	FakeTask(std::uint64_t id, const std::string& name) : id_(id), name_(name) {}
+	FakeTask(DTPP::Task::Id id, const std::string& name) : info_(id, name) {}
 
 };

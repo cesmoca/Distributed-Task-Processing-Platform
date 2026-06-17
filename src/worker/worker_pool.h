@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <atomic>
 
 #include <common/thread_safe_queue.h>
 #include <worker/worker.h>
@@ -11,7 +12,7 @@ namespace DTPP {
 	class WorkerPool{
 
 	public:
-		WorkerPool(Queue& queue, int workerCount) : queue_(queue), workerCount_(workerCount) {}
+		WorkerPool(Queue& queue, int workerCount) : queue_(queue), workerCount_(workerCount), nextId_(0) {}
 
 		void start();
 		
@@ -19,7 +20,8 @@ namespace DTPP {
 
 	private:
 		Queue& queue_;
-		int workerCount_;
+		const int workerCount_;
+		std::atomic<typename Worker<Queue>::Id> nextId_;
 		std::vector<Worker<Queue>> workers_;
 		
 	};

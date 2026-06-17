@@ -10,7 +10,7 @@ TEST(SchedulerTest, SubmitTasks) {
 	auto task = [&nTasksCompleted]() {
 		nTasksCompleted++;
 		return DTPP::Task::Result{
-			DTPP::Task::Status::Completed,
+			true,
 			"Completed",
 			0
 		};

@@ -34,8 +34,11 @@ namespace DTPP {
 			auto task = queue_.waitAndPop(); // Wait for a task to be available in the queue
 
 			if (task) {
-				std::cout << std::format("[Worker {}] Executing task {}...\n", id_, task->id());
-				task->execute();
+				std::cout << std::format("[Worker {}] Executing task {}...\n", id_, task->info().id);
+				auto result = task->execute();
+				// TODO not doing anything with the result
+				//  maybe notify the queue?
+				//  queue.completedTask(result)
 			}
 			else {
 				// Means we are stopping, so let's get out

@@ -7,12 +7,12 @@ namespace DTPP {
 
 	template <typename Callable>
 	void Scheduler::submitTask(Callable&& task) {
-		int taskId = nextId_;
+		int id = nextId_;
 		nextId_++;
 		queue_.push(
 			std::make_unique<Task>(
-				taskId,
-				std::format("Task {}", taskId),
+				id,
+				std::format("Task {}", id),
 				std::forward<Callable>(task)
 			)
 		);
