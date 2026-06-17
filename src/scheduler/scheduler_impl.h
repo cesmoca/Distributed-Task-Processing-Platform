@@ -7,14 +7,19 @@ namespace DTPP {
 
 	template <typename Callable>
 	void Scheduler::submitTask(Callable&& task) {
-		int id = nextId_;
+		Task::Id taskId = nextId_;
 		nextId_++;
+
+		// Create the taskInfo and push it to the taskRegistry
+		Task::Info taskInfo{ taskId, Task::Status::Pending };
+
 		queue_.push(
 			std::make_unique<Task>(
-				id,
+				taskId,
 				std::forward<Callable>(task)
 			)
 		);
+
 	}
 
 	void Scheduler::start() {

@@ -19,7 +19,7 @@ public:
 		return taskResult;
 	}
 
-	DTPP::Task::Info info() const noexcept { return info_; }
+	DTPP::Task::Id id() const noexcept { return id_; }
 
 	DTPP::Task::Result taskResult = DTPP::Task::Result{ true, "Completed", 0 };
 
@@ -30,9 +30,9 @@ public:
 	bool executeCalled = false;
 
 private:
-	DTPP::Task::Info info_;
+	DTPP::Task::Id id_;
 	std::function<DTPP::Task::Result()> work_;
 
-	FakeTask(DTPP::Task::Id id) : info_(id) {}
+	FakeTask(DTPP::Task::Id id) : id_(id) {}
 
 };

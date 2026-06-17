@@ -16,7 +16,7 @@ TEST(ThreadSafeQueueTest, Push) {
 	auto task = queue.tryPopOrNull();
 
 	EXPECT_TRUE(task != nullptr);
-	EXPECT_EQ(task->info().id, 0);
+	EXPECT_EQ(task->id(), 0);
 
 	std::cout << std::format("ThreadSafeQueueTest ended\n");
 }
@@ -28,7 +28,7 @@ TEST(ThreadSafeQueueTest, WaitAndPopEmptyQueue) {
 
 	auto value = queue.waitAndPop();
 
-	EXPECT_EQ(value->info().id, 0);
+	EXPECT_EQ(value->id(), 0);
 }
 
 TEST(ThreadSafeQueueTest, WaitAndPopStoppingBeforeWait) {
@@ -58,7 +58,7 @@ TEST(ThreadSafeQueueTest, WaitAndPopWaitsForTasks) {
 	future.get(); // Wait for producer to be ready
 
 	auto value = queue.waitAndPop();
-	EXPECT_EQ(value->info().id, 0);
+	EXPECT_EQ(value->id(), 0);
 }
 
 TEST(ThreadSafeQueueTest, TryPopOrNull_NotNull) {
@@ -69,7 +69,7 @@ TEST(ThreadSafeQueueTest, TryPopOrNull_NotNull) {
 	auto task = queue.tryPopOrNull();
 
 	EXPECT_TRUE(task != nullptr);
-	EXPECT_EQ(task->info().id, 0);
+	EXPECT_EQ(task->id(), 0);
 }
 
 TEST(ThreadSafeQueueTest, TryPopOrNull_Null) {

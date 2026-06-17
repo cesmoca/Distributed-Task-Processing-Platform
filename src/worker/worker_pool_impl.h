@@ -11,7 +11,9 @@ namespace DTPP {
 		for (int i = 0; i < workerCount_; ++i) {
 			int id = nextId_;
 			nextId_++;
-			workers_.emplace_back(nextId_, queue_);
+			workers_.emplace_back(nextId_, queue_, 
+				[](Task::Id){}, 
+				[](Task::Id, Task::Result){});
 		}
 
 		for (auto& w : workers_) {

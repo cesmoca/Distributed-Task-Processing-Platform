@@ -9,7 +9,7 @@ TEST(TaskTest, Ctr) {
 		return Task::Result{ true, "Task completed successfully", 42 };
 	} };
 
-	EXPECT_EQ(task.info().id, 0);
+	EXPECT_EQ(task.id(), 0);
 }
 
 TEST(TaskTest, Execute) {

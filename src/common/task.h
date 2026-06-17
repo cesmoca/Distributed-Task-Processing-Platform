@@ -71,15 +71,15 @@ namespace DTPP {
 			work_ = std::forward<Callable>(work);
 		}
 
-		Info info() const noexcept { return info_; }
+		Id id() const noexcept { return id_; }
 		Result execute() const;
 
 
 	private:
-		Info info_;
+		Id id_;
 		std::function<Result()> work_;
 
-		Task(Id id) : info_(id) {}
+		Task(Id id) : id_(id) {}
 
 	};
 

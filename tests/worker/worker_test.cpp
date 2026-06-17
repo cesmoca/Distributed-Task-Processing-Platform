@@ -21,7 +21,7 @@ TEST(WorkerTest, StartStop) {
 		return Task::Result{ true, "Completed", 0 };
 	};
 
-	Worker<FakeQueue> worker{0, queue};
+	Worker<FakeQueue> worker(0, queue, [](Task::Id){}, [](Task::Id, Task::Result) {});
 	worker.start();
 
 	// Let's give time to the worker to start it's thread

@@ -14,9 +14,9 @@ Task::Result Task::execute() const {
 	//  if(work_) before calling it, but for now we will
 	//  it will always be set by the constructor, so we 
 	//  can skip that check
-	std::cout << std::format("[Task {}] Starting work...\n", info_.id);
+	std::cout << std::format("[Task {}] Starting work...\n", id_);
 	auto taskResult = work_();
-	std::cout << std::format("[Task {}] Ended work with result: {}\n", info_.id, taskResult.toString());
+	std::cout << std::format("[Task {}] Ended work with result: {}\n", id_, taskResult.toString());
 
 	return taskResult;
 }
