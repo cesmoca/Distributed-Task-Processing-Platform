@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <atomic>
 #include <stdexcept>
+#include <utility>
 
 #include <common/thread_safe_queue.h>
 #include <worker/worker_pool.h>
@@ -24,9 +25,11 @@ namespace DTPP {
 		void start();
 		void stopAndWait();
 
+		Task::Status trackTask(Task::Id id);
+
 		template <typename Callable>
 		void submitTask(Callable&& task);
-		Task::Status trackTask(Task::Id id);
+
 	
 	private:
 		ThreadSafeQueue queue_;
@@ -39,6 +42,24 @@ namespace DTPP {
 		void onTaskCompleted(Task::Id id, Task::Result result);
 	};
 
+	// Template functions implementation
+	template <typename Callable>
+	void Scheduler::submitTask(Callable&& task) {
+		std::lock_guard lock(tasksRegistryMutex_);
+		Task::Id taskId = nextId_;
+		nextId_++;
+
+		// Create the taskInfo and push it to the taskRegistry
+		Task::Info taskInfo{ taskId, Task::Status::Pending };
+		tasksRegistry_.emplace(taskId, taskInfo);
+
+		queue_.push(
+			std::make_unique<Task>(
+				taskId,
+				std::forward<Callable>(task)
+			)
+		);
+	}
+
 };
 
-#include <scheduler/scheduler_impl.h>

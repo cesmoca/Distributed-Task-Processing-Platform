@@ -18,7 +18,7 @@ add_library(distributed_task_platform
  "src/worker/worker_pool.h" 
  "src/worker/worker_pool_impl.h" 
  "src/scheduler/scheduler.h"
- "src/scheduler/scheduler_impl.h"
+ "src/scheduler/scheduler.cpp"
  "src/utils.h"
  "src/utils.cpp")
 

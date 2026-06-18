@@ -5,6 +5,8 @@
 #include <functional>
 #include <utility>
 
+#include <common/task.h>
+
 class FakeTask {
 public:
 

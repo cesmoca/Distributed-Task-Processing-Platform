@@ -59,7 +59,7 @@ namespace DTPP {
 
 
 			std::string toString() const {
-				return std::format("Result {}: {}", success ? "Succeded" : "Failed", message);
+				return std::format("Result {}: {}", success ? "Succeeded" : "Failed", message);
 			}
 		};
 

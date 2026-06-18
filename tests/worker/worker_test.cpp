@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <utility>
 #include <functional>
+#include <chrono>
+#include <memory>
 
 #include <test_utils.h>
 #include <worker/worker.h>

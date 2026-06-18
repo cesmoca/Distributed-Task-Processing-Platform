@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <atomic>
+#include <functional>
 
 #include <common/thread_safe_queue.h>
 #include <worker/worker.h>

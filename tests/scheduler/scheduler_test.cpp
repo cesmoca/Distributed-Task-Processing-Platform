@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <stdexcept>
+#include <atomic>
 
 #include <scheduler/scheduler.h>
 #include <test_utils.h>
@@ -9,7 +10,7 @@ TEST(SchedulerTest, SubmitTasks_CorrectTasks_Completes) {
 	const int N_TASKS = 5;
 	const int N_WORKERS = 2;
 	
-	int nTasksCompleted = 0;
+	std::atomic<int> nTasksCompleted = 0;
 
 	auto task = [&nTasksCompleted]() {
 		nTasksCompleted++;

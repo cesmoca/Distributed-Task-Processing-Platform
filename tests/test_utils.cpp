@@ -3,6 +3,7 @@
 #include <functional>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
 
 namespace TestUtils {
 	bool waitForConditionWithTimeout(std::chrono::milliseconds timeoutMs, std::function<bool()> predicate) {

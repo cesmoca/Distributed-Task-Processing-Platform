@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <queue>
 #include <future>
+#include <vector>
 
 #include <common/task.h>
 #include <fakes/fake_task.h>

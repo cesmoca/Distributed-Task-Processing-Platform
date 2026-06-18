@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <format>
+#include <iostream>
 
 namespace DTPP {
 
@@ -11,7 +13,7 @@ namespace DTPP {
 
 		// Create and start the worker counts
 		for (int i = 0; i < workerCount_; ++i) {
-			int id = nextId_;
+			typename Worker<Queue>::Id id = nextId_;
 			nextId_++;
 			workers_.emplace_back(id, queue_,
 				onTaskStarted_, onTaskCompleted_);

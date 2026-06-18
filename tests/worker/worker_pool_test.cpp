@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+#include <format>
+#include <iostream>
 
 #include <worker/worker_pool.h>
 #include <fakes/fake_queue.h>
