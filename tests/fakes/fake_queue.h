@@ -12,6 +12,14 @@ class FakeQueue {
 
 public:
 
+	bool pushCalled = false;
+	bool waitAndPopCalled = false;
+	bool tryPopOrNullCalled = false;
+	bool emptyCalled = false;
+	bool stopCalled = false;
+
+	std::vector<std::unique_ptr<FakeTask>> queue{};
+
 	void push(std::unique_ptr<FakeTask> task) {
 		{
 			std::lock_guard lock{ mutex_ };
@@ -26,8 +34,6 @@ public:
 	std::unique_ptr<FakeTask> waitAndPop() {
 		std::unique_lock lock(mutex_);
 		waitAndPopCalled = true;
-
-		promise.set_value();
 
 		conditionVar_.wait(lock, [this]() {
 			return !queue.empty() || stopping_;
@@ -70,19 +76,11 @@ public:
 		stopCalled = false;
 		stopping_ = false;
 		queue.clear();
-		promise = std::promise<void>{};
 	}
 
-	bool pushCalled = false;
-	bool waitAndPopCalled = false;
-	bool tryPopOrNullCalled = false;
-	bool emptyCalled = false;
-	bool stopCalled = false;
-
-	std::vector<std::unique_ptr<FakeTask>> queue{};
-
-	// Helps to synchronize with waitAndPop
-	std::promise<void> promise;
+	~FakeQueue() {
+		stop();
+	}
 
 private:
 	std::condition_variable conditionVar_;

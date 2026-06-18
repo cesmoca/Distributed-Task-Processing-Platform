@@ -1,4 +1,6 @@
 #include <common/thread_safe_queue.h>
+#include <iostream>
+#include <format>
 
 using namespace DTPP;
 
@@ -47,4 +49,9 @@ void ThreadSafeQueue::stop() {
 	std::lock_guard lock{ mutex_ };
 	stopping_ = true;
 	conditionVar_.notify_all();
+}
+
+ThreadSafeQueue::~ThreadSafeQueue() {
+	std::cout << std::format("~[ThreadSafeQueue]\n");
+	stop();
 }

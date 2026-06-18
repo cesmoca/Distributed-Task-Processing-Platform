@@ -12,18 +12,26 @@ namespace DTPP {
 	class WorkerPool{
 
 	public:
-		WorkerPool(Queue& queue, int workerCount) : queue_(queue), workerCount_(workerCount), nextId_(0) {}
+		WorkerPool(Queue& queue, 
+			int workerCount, 
+			std::function<void(Task::Id)> onTaskStarted,
+			std::function<void(Task::Id, Task::Result)> onTaskCompleted
+		) : queue_(queue), workerCount_(workerCount), nextId_(0),
+			onTaskStarted_(onTaskStarted), onTaskCompleted_(onTaskCompleted){}
+
+		~WorkerPool();
 
 		void start();
 		
-		void stop();
+		void stopAndWait();
 
 	private:
 		Queue& queue_;
 		const int workerCount_;
 		std::atomic<typename Worker<Queue>::Id> nextId_;
 		std::vector<Worker<Queue>> workers_;
-		
+		const std::function<void(Task::Id)> onTaskStarted_;
+		const std::function<void(Task::Id, Task::Result)> onTaskCompleted_;
 	};
 
 }

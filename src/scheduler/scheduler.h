@@ -13,16 +13,20 @@ namespace DTPP {
 	class Scheduler {
 	public:
 		
-		Scheduler(int nWorkers): workerPool_(queue_, nWorkers) {}
+		Scheduler(int nWorkers): 
+			workerPool_(queue_, 
+				nWorkers,
+				[this](Task::Id id) { onTaskStarted(id); },
+				[this](Task::Id id, Task::Result result) { onTaskCompleted(id, result);  }) {}
+
+		~Scheduler();
 
 		void start();
 		void stopAndWait();
 
 		template <typename Callable>
 		void submitTask(Callable&& task);
-		//Task::Status trackTask(Task::Id id);
-		//Task::Info queryTask(Task::Id id);
-
+		Task::Status trackTask(Task::Id id);
 	
 	private:
 		ThreadSafeQueue queue_;
@@ -31,6 +35,8 @@ namespace DTPP {
 		std::unordered_map<Task::Id, Task::Info> tasksRegistry_;
 		std::atomic<Task::Id> nextId_ = 0;
 
+		void onTaskStarted(Task::Id id);
+		void onTaskCompleted(Task::Id id, Task::Result result);
 	};
 
 };

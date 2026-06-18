@@ -6,7 +6,7 @@
 
 using namespace DTPP;
 
-TEST(ThreadSafeQueueTest, Push) {
+TEST(ThreadSafeQueueTest, TryPopOrNull_PopTask_CorrectFields) {
 	ThreadSafeQueue queue{};
 
 	EXPECT_TRUE(queue.empty());
@@ -17,11 +17,28 @@ TEST(ThreadSafeQueueTest, Push) {
 
 	EXPECT_TRUE(task != nullptr);
 	EXPECT_EQ(task->id(), 0);
-
-	std::cout << std::format("ThreadSafeQueueTest ended\n");
 }
 
-TEST(ThreadSafeQueueTest, WaitAndPopEmptyQueue) {
+TEST(ThreadSafeQueueTest, TryPopOrNull_NotNullTask_CorrectFields) {
+	ThreadSafeQueue queue{};
+
+	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
+
+	auto task = queue.tryPopOrNull();
+
+	EXPECT_TRUE(task != nullptr);
+	EXPECT_EQ(task->id(), 0);
+}
+
+TEST(ThreadSafeQueueTest, TryPopOrNull_NullTask_ReturnsNullPtr) {
+	ThreadSafeQueue queue{};
+
+	auto task = queue.tryPopOrNull();
+
+	EXPECT_TRUE(task == nullptr);
+}
+
+TEST(ThreadSafeQueueTest, WaitAndPop_EmptyQueue_Completes) {
 	ThreadSafeQueue queue{};
 	
 	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; } ));
@@ -31,7 +48,7 @@ TEST(ThreadSafeQueueTest, WaitAndPopEmptyQueue) {
 	EXPECT_EQ(value->id(), 0);
 }
 
-TEST(ThreadSafeQueueTest, WaitAndPopStoppingBeforeWait) {
+TEST(ThreadSafeQueueTest, WaitAndPop_StoppingBeforeWait_Completes) {
 	ThreadSafeQueue queue{};
 
 	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
@@ -42,7 +59,7 @@ TEST(ThreadSafeQueueTest, WaitAndPopStoppingBeforeWait) {
 	EXPECT_EQ(nullptr, value);
 }
 
-TEST(ThreadSafeQueueTest, WaitAndPopWaitsForTasks) {
+TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
 	ThreadSafeQueue queue{};
 	std::promise<void> promise; // It helps us with synchronization
 
@@ -61,26 +78,9 @@ TEST(ThreadSafeQueueTest, WaitAndPopWaitsForTasks) {
 	EXPECT_EQ(value->id(), 0);
 }
 
-TEST(ThreadSafeQueueTest, TryPopOrNull_NotNull) {
-	ThreadSafeQueue queue{};
 
-	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
-	auto task = queue.tryPopOrNull();
-
-	EXPECT_TRUE(task != nullptr);
-	EXPECT_EQ(task->id(), 0);
-}
-
-TEST(ThreadSafeQueueTest, TryPopOrNull_Null) {
-	ThreadSafeQueue queue{};
-
-	auto task = queue.tryPopOrNull();
-
-	EXPECT_TRUE(task == nullptr);
-}
-
-TEST(ThreadSafeQueueTest, Stop) {
+TEST(ThreadSafeQueueTest, Stop_RunsWaitAndPop_Completes) {
 	ThreadSafeQueue queue{};
 	std::promise<void> promise; // It helps us with synchronization
 

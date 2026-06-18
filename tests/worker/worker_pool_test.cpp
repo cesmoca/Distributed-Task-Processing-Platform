@@ -5,18 +5,20 @@
 
 using namespace DTPP;
 
-TEST(WorkerPool, StartStopTest) {
+TEST(WorkerPool, StartStop_Completes) {
 	FakeQueue queue{};
 
 	int workerCount = 1;
-	WorkerPool<FakeQueue> workerPool(queue, workerCount);
+	WorkerPool<FakeQueue> workerPool(
+		queue, 
+		workerCount,
+		[](Task::Id) {},
+		[](Task::Id, Task::Result) {});
 
 	workerPool.start();
 
 	queue.stop(); // The workers are waiting at the condition var
-	workerPool.stop();
-
-	EXPECT_EQ(true, true);
+	workerPool.stopAndWait();
 
 	std::cout << std::format("WorkerPoolTest ended.\n");
 }

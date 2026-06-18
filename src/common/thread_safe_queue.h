@@ -13,6 +13,7 @@ namespace DTPP {
 	public:
 
 		ThreadSafeQueue() = default;
+		~ThreadSafeQueue();
 
 		// Deleting copy and moving, because it owns a mutex and 
 		//  condition_variable. This object should not be
@@ -21,7 +22,7 @@ namespace DTPP {
 		ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
 		ThreadSafeQueue(ThreadSafeQueue&&) = delete;
 		ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
-		~ThreadSafeQueue() = default;
+
 		void push(std::unique_ptr<Task> task);
 
 		std::unique_ptr<Task> waitAndPop();

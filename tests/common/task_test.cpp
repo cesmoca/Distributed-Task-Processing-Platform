@@ -3,7 +3,7 @@
 
 using namespace DTPP;
 
-TEST(TaskTest, Ctr) {
+TEST(TaskTest, Ctr_CorrectFields) {
 
 	Task task{ 0, []() {
 		return Task::Result{ true, "Task completed successfully", 42 };
@@ -12,7 +12,7 @@ TEST(TaskTest, Ctr) {
 	EXPECT_EQ(task.id(), 0);
 }
 
-TEST(TaskTest, Execute) {
+TEST(TaskTest, Execute_CorrectTask_Completes) {
 	
 	Task task{ 0, []() {
 		return Task::Result{ true, "Task completed successfully", 42 };

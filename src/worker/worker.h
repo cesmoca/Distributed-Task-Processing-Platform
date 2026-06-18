@@ -30,10 +30,11 @@ namespace DTPP {
 		Worker(Worker&&) = default;
 		Worker& operator=(Worker&&) = default;
 
-		void start();
-		void join();
+		~Worker();
 
-		void requestStop();
+		void start();
+
+		void stopAndWait();
 
 	private:
 		Id id_;

@@ -30,7 +30,7 @@ std::function<DTPP::Task::Result()> createTask() {
 		int waitTimeMs = randomInt(500, 1500);
 		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
 
-		return DTPP::Task::Result{ true, "Task 1 completed successfully", 0 };
+		return DTPP::Task::Result{ true, "Task completed successfully", 0 };
 	};
 }
 
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
 
 	scheduler.stopAndWait();
 
-	std::cout << std::format("[Main Loop] Work finished, bye!\n");
+	std::cout << std::format("[Main Loop] End reached\n");
 
 	return 0;
 }
