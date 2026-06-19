@@ -2,6 +2,7 @@
 #include <format>
 #include <iostream>
 
+#include <common/task.h>
 #include <worker/worker_pool.h>
 #include <fakes/fake_queue.h>
 

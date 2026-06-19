@@ -1,6 +1,7 @@
 #include <common/thread_safe_queue.h>
 #include <iostream>
 #include <format>
+#include <utility>
 
 using namespace DTPP;
 
@@ -52,6 +53,6 @@ void ThreadSafeQueue::stop() {
 }
 
 ThreadSafeQueue::~ThreadSafeQueue() {
-	std::cout << std::format("~[ThreadSafeQueue]\n");
+	//std::cout << std::format("~[ThreadSafeQueue]\n");
 	stop();
 }

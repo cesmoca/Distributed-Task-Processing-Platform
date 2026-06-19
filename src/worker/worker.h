@@ -17,7 +17,7 @@ namespace DTPP {
 		Worker(Id id, 
 			Queue& queue,
 			std::function<void(Task::Id)> onTaskStarted,
-			std::function<void(Task::Id, Task::Result)> onTaskCompleted
+			std::function<void(Task::Id, Task::Result&&)> onTaskCompleted
 			) :	id_(id), queue_(queue), onTaskStarted_(onTaskStarted), onTaskCompleted_(onTaskCompleted) {}
 
 
@@ -41,7 +41,7 @@ namespace DTPP {
 		Queue& queue_;
 		std::jthread thread_;
 		const std::function<void(Task::Id)> onTaskStarted_;
-		const std::function<void(Task::Id, Task::Result)> onTaskCompleted_;
+		const std::function<void(Task::Id, Task::Result&&)> onTaskCompleted_;
 
 		void run(std::stop_token stopToken);
 

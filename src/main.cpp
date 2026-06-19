@@ -9,6 +9,7 @@
 #include <format>
 #include <memory>
 #include <functional>
+#include <cstdint>
 
 #include <common/thread_safe_queue.h>
 #include <common/task.h>
@@ -50,6 +51,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	scheduler.stopAndWait();
+
+	// Show tasks results
+	for (DTPP::Task::Id id = 0; id < nTasks; ++id) {
+		auto taskInfo = scheduler.getTaskInfo(id);
+		std::cout << taskInfo.toString() << std::endl;
+	}
 
 	std::cout << std::format("[Main Loop] End reached\n");
 

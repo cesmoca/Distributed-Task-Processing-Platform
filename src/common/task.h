@@ -8,6 +8,7 @@
 #include <utility>
 #include <stdexcept>
 #include <format>
+#include <optional>
 
 namespace DTPP {
 
@@ -34,37 +35,16 @@ namespace DTPP {
 			Failed
 		};
 
-		struct Info {
-			Id id;
-			Status status;
-
-			std::string toString() const {
-				switch (status) {
-				case Status::Pending: return "Pending";
-				case Status::Running: return "Running";
-				case Status::Completed: return "Completed";
-				case Status::Failed: return "Failed";
-				default: throw std::logic_error("Not all Task::Result implemented in toString");
-				}
-			}
-		};
-
-		// TODO: We are starting with just an enum, but in the future
-		//  we can use a more complex structure, allowing for example
-		//  to return all kinds of data. We can use variant for that
 		struct Result {
 			bool success;
 			std::string message;
 			int data; // Example of additional data
-
+			std::optional<std::string> errorMsg;
 
 			std::string toString() const {
-				return std::format("Result {}: {}", success ? "Succeeded" : "Failed", message);
+				return std::format("Result {}: {}, data: {}", success ? "Succeeded" : "Failed", message, data);
 			}
 		};
-
-
-		//Task(std::uint64_t id, Type type, const std::string& name);
 
 		template<typename Callable>
 		Task(Id id, Callable&& work) : Task(id) {

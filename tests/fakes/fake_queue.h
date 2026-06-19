@@ -5,6 +5,7 @@
 #include <queue>
 #include <future>
 #include <vector>
+#include <utility>
 
 #include <common/task.h>
 #include <fakes/fake_task.h>

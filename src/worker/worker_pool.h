@@ -4,6 +4,7 @@
 #include <atomic>
 #include <functional>
 
+#include <common/task.h>
 #include <common/thread_safe_queue.h>
 #include <worker/worker.h>
 
@@ -13,10 +14,11 @@ namespace DTPP {
 	class WorkerPool{
 
 	public:
+
 		WorkerPool(Queue& queue, 
 			int workerCount, 
 			std::function<void(Task::Id)> onTaskStarted,
-			std::function<void(Task::Id, Task::Result)> onTaskCompleted
+			std::function<void(Task::Id, Task::Result&&)> onTaskCompleted
 		) : queue_(queue), workerCount_(workerCount), nextId_(0),
 			onTaskStarted_(onTaskStarted), onTaskCompleted_(onTaskCompleted){}
 
@@ -32,7 +34,7 @@ namespace DTPP {
 		std::atomic<typename Worker<Queue>::Id> nextId_;
 		std::vector<Worker<Queue>> workers_;
 		const std::function<void(Task::Id)> onTaskStarted_;
-		const std::function<void(Task::Id, Task::Result)> onTaskCompleted_;
+		const std::function<void(Task::Id, Task::Result&&)> onTaskCompleted_;
 	};
 
 }

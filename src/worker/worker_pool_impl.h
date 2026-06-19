@@ -35,7 +35,7 @@ namespace DTPP {
 
 	template<typename Queue>
 	WorkerPool<Queue>::~WorkerPool() {
-		std::cout << std::format("~[WorkerPool]\n");
+		//std::cout << std::format("~[WorkerPool]\n");
 		stopAndWait();
 	}
 };

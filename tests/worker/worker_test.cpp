@@ -4,6 +4,7 @@
 #include <chrono>
 #include <memory>
 
+#include <common/task.h>
 #include <test_utils.h>
 #include <worker/worker.h>
 #include <fakes/fake_queue.h>

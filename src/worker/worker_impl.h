@@ -2,6 +2,7 @@
 #include <iostream>
 #include <format>
 #include <string>
+#include <utility>
 #include <utils.h>
 
 namespace DTPP {
@@ -11,7 +12,7 @@ namespace DTPP {
 		std::cout << std::format("[Worker {} {}] Starting worker thread...\n", id_, static_cast<const void*>(this));
 
 		thread_ = std::jthread{ [this](std::stop_token stopToken) {
-			std::cout << std::format("[Worker {} {} {}] Started thread execution \n", id_, static_cast<const void*>(this), Utils::threadId());
+			//std::cout << std::format("[Worker {} {} {}] Started thread execution \n", id_, static_cast<const void*>(this), Utils::threadId());
 			run(stopToken);
 		} };
 
@@ -19,7 +20,7 @@ namespace DTPP {
 
 	template<typename Queue>
 	void Worker<Queue>::stopAndWait() {
-		std::cout << std::format("[Worker {} {}] Requested stop and wait\n", id_, static_cast<const void*>(this));
+		//std::cout << std::format("[Worker {} {}] Requested stop and wait\n", id_, static_cast<const void*>(this));
 		thread_.get_stop_source().request_stop();
 		if(thread_.joinable()) thread_.join();
 	}
@@ -38,7 +39,7 @@ namespace DTPP {
 
 				auto result = task->execute();
 
-				onTaskCompleted_(task->id(), result);
+				onTaskCompleted_(task->id(), std::move(result));
 			}
 			else {
 				// Means we are stopping, so let's get out
@@ -52,7 +53,7 @@ namespace DTPP {
 
 	template <typename Queue>
 	Worker<Queue>::~Worker() {
-		std::cout << std::format("~[Worker {} {}]\n", id_, static_cast<const void*>(this));
+		//std::cout << std::format("~[Worker {} {}]\n", id_, static_cast<const void*>(this));
 		//std::cout << std::format("~[Worker {} {}] Worker requesting stop in destructor\n", id_, static_cast<const void*>(this));
 		stopAndWait();
 		//std::cout << std::format("~[Worker {} {}] Worker destroyed\n", id_, static_cast<const void*>(this));

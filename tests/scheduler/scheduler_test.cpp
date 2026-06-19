@@ -27,7 +27,7 @@ TEST(SchedulerTest, SubmitTasks_CorrectTasks_Completes) {
 
 	// Check that there should be nTasks pending tasks
 	for (DTPP::Task::Id id = 0; id < N_TASKS; ++id) {
-		EXPECT_EQ(DTPP::Task::Status::Pending, scheduler.trackTask(id));
+		EXPECT_EQ(DTPP::Task::Status::Pending, scheduler.getTaskStatus(id));
 	}
 
 	scheduler.start();
@@ -42,7 +42,7 @@ TEST(SchedulerTest, SubmitTasks_CorrectTasks_Completes) {
 
 	// Check that there should be nTasks completed tasks
 	for (DTPP::Task::Id id = 0; id < N_TASKS; ++id) {
-		EXPECT_EQ(DTPP::Task::Status::Completed, scheduler.trackTask(id));
+		EXPECT_EQ(DTPP::Task::Status::Completed, scheduler.getTaskStatus(id));
 	}
 }
 
@@ -64,5 +64,5 @@ TEST(SchedulerTest, TrackTask_UnexistingTask_ThrowsException) {
 	for (int i = 0; i < nTasks; ++i) { scheduler.submitTask(task); }
 
 	// Tracking a task with unexisting id throws an exception
-	EXPECT_THROW(scheduler.trackTask(555), std::out_of_range);
+	EXPECT_THROW(scheduler.getTaskStatus(555), std::out_of_range);
 }
