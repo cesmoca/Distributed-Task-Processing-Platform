@@ -7,6 +7,7 @@
 #include <format>
 #include <iostream>
 #include <mutex>
+#include <chrono>
 
 #include <common/task.h>
 
@@ -49,6 +50,7 @@ void Scheduler::onTaskStarted(Task::Id id) {
 		throw std::out_of_range(std::format("Task with id {} not found", id));
 	}
 
+	it->second.startedAt = Task::Timestamp(std::chrono::steady_clock::now());
 	it->second.status = Task::Status::Running;
 };
 
@@ -60,6 +62,7 @@ void Scheduler::onTaskCompleted(Task::Id id, Task::Result&& result) {
 		throw std::out_of_range(std::format("Task with id {} not found", id));
 	}
 
+	it->second.finishedAt = Task::Timestamp(std::chrono::steady_clock::now());
 	it->second.status = result.success ? Task::Status::Completed : Task::Status::Failed;
 	it->second.result = std::move(result);
 }

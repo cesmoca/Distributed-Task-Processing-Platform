@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <format>
+#include <chrono>
 
 #include <common/task.h>
 #include <common/thread_safe_queue.h>
@@ -23,6 +24,20 @@ namespace DTPP {
 			Task::Status status;
 			std::optional<Task::Result> result;
 
+			Task::Timestamp createdAt;
+			Task::Timestamp startedAt;
+			Task::Timestamp finishedAt;
+
+			Task::DurationMs getDurationMs() const {
+				if (startedAt.has_value() && finishedAt.has_value()) {
+					return std::optional{ 
+						std::chrono::duration_cast<std::chrono::milliseconds>(*finishedAt - *startedAt)
+					};
+				}
+
+				return Task::DurationMs{};
+			}
+
 			std::string toString() const {
 				std::string statusStr;
 				switch (status) {
@@ -36,7 +51,11 @@ namespace DTPP {
 				std::string resultStr = "No result";
 				if (result.has_value()) resultStr = std::format("Result {}", (*result).toString());
 
-				return std::format("[Task {}] Status: {}. {}", id, statusStr, resultStr);
+				std::chrono::milliseconds durationMs(0);
+				auto durationOpt = getDurationMs();
+				if (durationOpt.has_value()) durationMs = *getDurationMs();
+
+				return std::format("[Task {} - {} ms] Status: {}. {}", id, durationMs, statusStr, resultStr);
 			}
 		};
 
@@ -78,6 +97,7 @@ namespace DTPP {
 
 		// Create the taskInfo and push it to the taskRegistry
 		Scheduler::TaskInfo taskInfo{ taskId, Task::Status::Pending };
+		taskInfo.createdAt = Task::Timestamp(std::chrono::steady_clock::now());
 		tasksRegistry_.emplace(taskId, taskInfo);
 
 		queue_.push(

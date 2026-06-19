@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <format>
 #include <optional>
+#include <chrono>
 
 namespace DTPP {
 
@@ -17,6 +18,8 @@ namespace DTPP {
 	public:
 
 		using Id = std::uint64_t;
+		using Timestamp = std::optional<std::chrono::time_point<std::chrono::steady_clock>>;
+		using DurationMs = std::optional<std::chrono::milliseconds>;
 
 		// TODO: Not using by now. We are implementing a callable based task,
 		//  for simple implementation. In the future we will add types
