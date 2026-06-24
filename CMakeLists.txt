@@ -12,7 +12,7 @@ add_library(distributed_task_platform
  "src/common/task.h"
  "src/common/task.cpp"
  "src/common/thread_safe_queue.h"
- "src/common/thread_safe_queue.cpp" 
+ "src/common/thread_safe_queue_impl.h" 
  "src/worker/worker.h" 
  "src/worker/worker_impl.h" 
  "src/worker/worker_pool.h" 
@@ -55,7 +55,8 @@ if(BUILD_TESTING)
      "tests/worker/worker_pool_test.cpp" 
      "tests/scheduler/scheduler_test.cpp"
      "tests/test_utils.h"
-     "tests/test_utils.cpp")
+     "tests/test_utils.cpp"
+     "tests/task_test.h")
 
     target_include_directories(distributed_task_platform_tests
         PRIVATE

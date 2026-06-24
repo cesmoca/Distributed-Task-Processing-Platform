@@ -1,14 +1,16 @@
 #include <gtest/gtest.h>
-#include <common/thread_safe_queue.h>
 #include <memory>
 #include <future>
 #include <format>
 #include <thread>
 
+#include <common/thread_safe_queue.h>
+#include <common/task.h>
+
 using namespace DTPP;
 
 TEST(ThreadSafeQueueTest, TryPopOrNull_PopTask_CorrectFields) {
-	ThreadSafeQueue queue{};
+	ThreadSafeQueue<Task> queue{};
 
 	EXPECT_TRUE(queue.empty());
 
@@ -21,7 +23,7 @@ TEST(ThreadSafeQueueTest, TryPopOrNull_PopTask_CorrectFields) {
 }
 
 TEST(ThreadSafeQueueTest, TryPopOrNull_NotNullTask_CorrectFields) {
-	ThreadSafeQueue queue{};
+	ThreadSafeQueue<Task> queue{};
 
 	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
@@ -32,7 +34,7 @@ TEST(ThreadSafeQueueTest, TryPopOrNull_NotNullTask_CorrectFields) {
 }
 
 TEST(ThreadSafeQueueTest, TryPopOrNull_NullTask_ReturnsNullPtr) {
-	ThreadSafeQueue queue{};
+	ThreadSafeQueue<Task> queue{};
 
 	auto task = queue.tryPopOrNull();
 
@@ -40,7 +42,7 @@ TEST(ThreadSafeQueueTest, TryPopOrNull_NullTask_ReturnsNullPtr) {
 }
 
 TEST(ThreadSafeQueueTest, WaitAndPop_EmptyQueue_Completes) {
-	ThreadSafeQueue queue{};
+	ThreadSafeQueue<Task> queue{};
 	
 	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; } ));
 
@@ -50,7 +52,7 @@ TEST(ThreadSafeQueueTest, WaitAndPop_EmptyQueue_Completes) {
 }
 
 TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
-	ThreadSafeQueue queue{};
+	ThreadSafeQueue<Task> queue{};
 	std::promise<void> promise; // It helps us with synchronization
 
 	// Start with an empty queue, and we simulate
@@ -69,7 +71,7 @@ TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
 }
 
 TEST(ThreadSafeQueueTest, Stop_PushTask_NotAdded) {
-	ThreadSafeQueue queue{};
+	ThreadSafeQueue<Task> queue{};
 	
 	auto work = [&]() {
 		return Task::Result{ true, "Completed", 0 };

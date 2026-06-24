@@ -9,10 +9,10 @@
 using namespace DTPP;
 
 TEST(WorkerPool, StartStop_Completes) {
-	ThreadSafeQueue queue{};
+	ThreadSafeQueue<Task> queue{};
 
 	int workerCount = 1;
-	WorkerPool<ThreadSafeQueue> workerPool(
+	WorkerPool<ThreadSafeQueue<Task>> workerPool(
 		queue, 
 		workerCount,
 		[](Task::Id) {},
@@ -21,7 +21,7 @@ TEST(WorkerPool, StartStop_Completes) {
 	workerPool.start();
 
 	queue.stop(); // The workers are waiting at the condition var
-	workerPool.stopAndWait(DTPP::Worker<ThreadSafeQueue>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+	workerPool.stopAndWait(DTPP::Worker<ThreadSafeQueue<Task>>::StopMode::FINISH_ALL_TASKS_AND_STOP);
 
 	std::cout << std::format("WorkerPoolTest ended.\n");
 }

@@ -9,11 +9,13 @@
 #include <thread>
 
 #include <common/task.h>
-#include <test_utils.h>
 #include <worker/worker.h>
+#include <test_utils.h>
+#include <task_test.h>
 
 
 using namespace DTPP;
+using namespace TestUtils;
 
 // So the problem is that the thread is already waiting
 //  for the next task, since it is empty. Then we order
@@ -22,27 +24,18 @@ using namespace DTPP;
 //  and finishes. BUT it is the queue that can unlock it.
 //  The worker does not have the capacity to unlock by itself
 TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
-	ThreadSafeQueue queue{};
+	ThreadSafeQueue<TaskTest> queue{};
 
-	// Let's control when each tasks is finished
-	std::promise<void> task0FinishPromise{}; 
-	std::promise<void> task1FinishPromise{};
 
 	std::atomic<bool> taskCompletedCalled = false;
 
-	auto task0Work = [&]() { 
-		task0FinishPromise.get_future().wait();
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		return Task::Result{ true, "Completed", 0 };
-	};
+	auto task0 = std::make_unique<TaskTest>(0);
+	auto task0Tester = task0->tester();
 
-	auto task1Work = [&]() {
-		task1FinishPromise.get_future().wait();
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		return Task::Result{ true, "Completed", 0 };
-	};
+	auto task1 = std::make_unique<TaskTest>(0);
+	auto task1Tester = task1->tester();
 
-	Worker<ThreadSafeQueue> worker(0, queue,
+	Worker<ThreadSafeQueue<TaskTest>> worker(0, queue,
 		[&](Task::Id) { },
 		[&](Task::Id, Task::Result) { 
 		taskCompletedCalled = true;
@@ -54,10 +47,10 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 	EXPECT_EQ(false, taskCompletedCalled);
 
 	// Pushing two tasks
-	queue.push(std::move(std::make_unique<Task>(DTPP::Task(0, task0Work))));
-	queue.push(std::move(std::make_unique<Task>(DTPP::Task(1, task1Work))));
+	queue.push(std::move(task0));
+	queue.push(std::move(task1));
 
-	task0FinishPromise.set_value(); // Unlock the first task's execution
+	task0Tester->continueExecutionPromise.set_value(); // Unlock the first task's execution
 
 	{
 		// Let's wait for the first task to be completed
@@ -78,10 +71,11 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 	// Let's stop giving tasks, but the second one should finish
 	queue.stop(); 
 
-	task1FinishPromise.set_value();
+	task1Tester->continueExecutionPromise.set_value();
+
 	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stop(DTPP::Worker<ThreadSafeQueue>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+	worker.stop(DTPP::Worker<ThreadSafeQueue<TaskTest>>::StopMode::FINISH_ALL_TASKS_AND_STOP);
 	worker.waitUntilFinished();
 
 	EXPECT_EQ(true, taskCompletedCalled);
@@ -90,27 +84,17 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 }
 
 TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
-	ThreadSafeQueue queue{};
-
-	// Let's control when each tasks is finished
-	std::promise<void> task0FinishPromise{};
-	std::promise<void> task1FinishPromise{};
+	ThreadSafeQueue<TaskTest> queue{};
 
 	std::atomic<bool> taskCompletedCalled = false;
 
-	auto task0Work = [&]() {
-		task0FinishPromise.get_future().wait();
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		return Task::Result{ true, "Completed", 0 };
-	};
+	auto task0 = std::make_unique<TaskTest>(0);
+	auto task0Tester = task0->tester();
 
-	auto task1Work = [&]() {
-		task1FinishPromise.get_future().wait();
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		return Task::Result{ true, "Completed", 0 };
-	};
+	auto task1 = std::make_unique<TaskTest>(0);
+	auto task1Tester = task1->tester();
 
-	Worker<ThreadSafeQueue> worker(0, queue,
+	Worker<ThreadSafeQueue<TaskTest>> worker(0, queue,
 		[&](Task::Id) {},
 		[&](Task::Id, Task::Result) {
 		taskCompletedCalled = true;
@@ -122,10 +106,10 @@ TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
 	EXPECT_EQ(false, taskCompletedCalled);
 
 	// Pushing two tasks
-	queue.push(std::move(std::make_unique<Task>(DTPP::Task(0, task0Work))));
-	queue.push(std::move(std::make_unique<Task>(DTPP::Task(1, task1Work))));
+	queue.push(std::move(task0));
+	queue.push(std::move(task1));
 
-	task0FinishPromise.set_value(); // Unlock the first task's execution
+	task0Tester->continueExecutionPromise.set_value(); // Unlock the first task's execution
 
 	{
 		// Let's wait for the first task to be completed
@@ -146,10 +130,11 @@ TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
 	// Let's stop giving tasks, but the second one should finish
 	queue.stop();
 
-	task1FinishPromise.set_value();
+	task1Tester->continueExecutionPromise.set_value();
+
 	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stop(DTPP::Worker<ThreadSafeQueue>::StopMode::STOP_PROCESSING_TASKS);
+	worker.stop(DTPP::Worker<ThreadSafeQueue<TaskTest>>::StopMode::STOP_PROCESSING_TASKS);
 	worker.waitUntilFinished();
 
 	EXPECT_EQ(true, taskCompletedCalled);

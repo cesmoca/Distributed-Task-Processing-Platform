@@ -8,6 +8,14 @@
 #include <scheduler/scheduler.h>
 #include <test_utils.h>
 
+using namespace DTPP;
+
+void waitForTaskToComplete(Scheduler& scheduler, Task::Id taskId) {
+	auto timeout = std::chrono::seconds(3);
+	TestUtils::waitForConditionWithTimeout(timeout, [&scheduler] {
+		return scheduler.getTaskStatus(0) == Task::Status::Completed;
+	});
+}
 TEST(SchedulerTest, SubmitTasks_CancelTasksAndWait_NotAllFinished) {
 	const int N_TASKS = 5;
 	const int N_WORKERS = 2;
@@ -17,16 +25,16 @@ TEST(SchedulerTest, SubmitTasks_CancelTasksAndWait_NotAllFinished) {
 	auto task = [&nTasksCompleted]() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 		nTasksCompleted++;
-		return DTPP::Task::Result{ true, "Completed", 0 };
+		return Task::Result{ true, "Completed", 0 };
 	};
 
-	DTPP::Scheduler scheduler(N_WORKERS);
+	Scheduler scheduler(N_WORKERS);
 
 	for (int i = 0; i < N_TASKS; ++i) { scheduler.submitTask(task); }
 
 	// Check that there should be nTasks pending tasks
-	for (DTPP::Task::Id id = 0; id < N_TASKS; ++id) {
-		EXPECT_EQ(DTPP::Task::Status::Pending, scheduler.getTaskStatus(id));
+	for (Task::Id id = 0; id < N_TASKS; ++id) {
+		EXPECT_EQ(Task::Status::Pending, scheduler.getTaskStatus(id));
 	}
 
 	scheduler.start();
@@ -46,16 +54,16 @@ TEST(SchedulerTest, SubmitTasks_finishTasksAndWait_AllFinished) {
 	auto task = [&nTasksCompleted]() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 		nTasksCompleted++;
-		return DTPP::Task::Result{ true, "Completed", 0 };
+		return Task::Result{ true, "Completed", 0 };
 	};
 
-	DTPP::Scheduler scheduler(N_WORKERS);
+	Scheduler scheduler(N_WORKERS);
 
 	for (int i = 0; i < N_TASKS; ++i) { scheduler.submitTask(task); }
 
 	// Check that there should be nTasks pending tasks
-	for (DTPP::Task::Id id = 0; id < N_TASKS; ++id) {
-		EXPECT_EQ(DTPP::Task::Status::Pending, scheduler.getTaskStatus(id));
+	for (Task::Id id = 0; id < N_TASKS; ++id) {
+		EXPECT_EQ(Task::Status::Pending, scheduler.getTaskStatus(id));
 	}
 
 	scheduler.start();
@@ -64,8 +72,8 @@ TEST(SchedulerTest, SubmitTasks_finishTasksAndWait_AllFinished) {
 	scheduler.finishTasksAndWait();
 
 	// Check that there should be nTasks completed tasks
-	for (DTPP::Task::Id id = 0; id < N_TASKS; ++id) {
-		EXPECT_EQ(DTPP::Task::Status::Completed, scheduler.getTaskStatus(id));
+	for (Task::Id id = 0; id < N_TASKS; ++id) {
+		EXPECT_EQ(Task::Status::Completed, scheduler.getTaskStatus(id));
 	}
 }
 
@@ -74,9 +82,9 @@ TEST(SchedulerTest, TrackTask_UnexistingTask_ThrowsException) {
 	const int N_TASKS = 1;
 	const int N_WORKERS = 4;
 
-	auto task = []() { return DTPP::Task::Result{ true,	"Completed", 0 }; };
+	auto task = []() { return Task::Result{ true,	"Completed", 0 }; };
 
-	DTPP::Scheduler scheduler(N_WORKERS);
+	Scheduler scheduler(N_WORKERS);
 
 	for (int i = 0; i < N_TASKS; ++i) { scheduler.submitTask(task); }
 
@@ -90,24 +98,20 @@ TEST(SchedulerTest, SubmitTask_TaskCompletes_CorrectTimeFields) {
 	auto task = []() {
 		// Task that takes 150 ms to finish
 		std::this_thread::sleep_for(std::chrono::milliseconds(150));
-		return DTPP::Task::Result{ true,	"Completed", 0 };;
+		return Task::Result{ true,	"Completed", 0 };;
 	};
 
-	DTPP::Scheduler scheduler(1);
+	Scheduler scheduler(1);
 
 	scheduler.start();
 
 	scheduler.submitTask(task);
 
-	EXPECT_TRUE(scheduler.getTaskStatus(0) != DTPP::Task::Status::Completed);
+	EXPECT_TRUE(scheduler.getTaskStatus(0) != Task::Status::Completed);
 
-	// Let's wait for the task to finish
-	auto timeout = std::chrono::seconds(3);
-	TestUtils::waitForConditionWithTimeout(timeout, [&scheduler] {
-		return scheduler.getTaskStatus(0) == DTPP::Task::Status::Completed;
-	});
+	waitForTaskToComplete(scheduler, 0);
 
-	EXPECT_EQ(scheduler.getTaskStatus(0), DTPP::Task::Status::Completed);
+	EXPECT_EQ(scheduler.getTaskStatus(0), Task::Status::Completed);
 
 	auto durationMs = scheduler.getTaskInfo(0).getDurationMs();
 
@@ -126,10 +130,10 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
 		// Let's simulate a task working for a long time
 		taskWorkPromise.get_future().wait();
 
-		return DTPP::Task::Result{ true, "Completed", 0 };
+		return Task::Result{ true, "Completed", 0 };
 	};
 
-	DTPP::Scheduler scheduler(1);
+	Scheduler scheduler(1);
 
 	scheduler.start();
 
@@ -139,7 +143,7 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
 	taskStartedPromise.get_future().wait();
 
 	// This time we do not wait for the task to finish, so it should not be completed
-	EXPECT_TRUE(scheduler.getTaskStatus(0) != DTPP::Task::Status::Completed);
+	EXPECT_TRUE(scheduler.getTaskStatus(0) != Task::Status::Completed);
 
 	auto durationMs = scheduler.getTaskInfo(0).getDurationMs();
 

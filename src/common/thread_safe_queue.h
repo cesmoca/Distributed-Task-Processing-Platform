@@ -5,9 +5,9 @@
 #include <condition_variable>
 #include <memory>
 
-#include <common/task.h>
-
 namespace DTPP {
+
+	template <typename T>
 	class ThreadSafeQueue {
 
 	public:
@@ -23,12 +23,12 @@ namespace DTPP {
 		ThreadSafeQueue(ThreadSafeQueue&&) = delete;
 		ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
 
-		void push(std::unique_ptr<Task> task);
+		void push(std::unique_ptr<T> task);
 
-		std::unique_ptr<Task> waitAndPop();
+		std::unique_ptr<T> waitAndPop();
 
 		[[nodiscard]]
-		std::unique_ptr<Task> tryPopOrNull();
+		std::unique_ptr<T> tryPopOrNull();
 
 		bool empty() const;
 
@@ -37,9 +37,11 @@ namespace DTPP {
 	private:
 
 		mutable std::mutex mutex_;
-		std::queue<std::unique_ptr<Task>> queue_;
+		std::queue<std::unique_ptr<T>> queue_;
 		std::condition_variable conditionVar_;
 		bool stopping_ = false;
 
 	};
 }
+
+#include <common/thread_safe_queue_impl.h>

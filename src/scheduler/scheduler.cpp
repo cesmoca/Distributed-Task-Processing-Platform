@@ -19,12 +19,12 @@ void Scheduler::start() {
 
 void Scheduler::cancelTasksAndWait() {
 	queue_.stop(); // Cancel all queued tasks
-	workerPool_.stopAndWait(Worker<ThreadSafeQueue>::StopMode::STOP_PROCESSING_TASKS);
+	workerPool_.stopAndWait(Worker<ThreadSafeQueue<Task>>::StopMode::STOP_PROCESSING_TASKS);
 }
 
 void Scheduler::finishTasksAndWait() {
 	queue_.stop(); // We finish the ones that are already queued
-	workerPool_.stopAndWait(Worker<ThreadSafeQueue>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+	workerPool_.stopAndWait(Worker<ThreadSafeQueue<Task>>::StopMode::FINISH_ALL_TASKS_AND_STOP);
 }
 
 Task::Status Scheduler::getTaskStatus(Task::Id id) {

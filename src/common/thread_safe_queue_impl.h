@@ -1,4 +1,5 @@
-#include <common/thread_safe_queue.h>
+#pragma once
+
 #include <iostream>
 #include <format>
 #include <mutex>
@@ -6,7 +7,8 @@
 
 using namespace DTPP;
 
-void ThreadSafeQueue::push(std::unique_ptr<Task> task) {
+template <typename T>
+void ThreadSafeQueue<T>::push(std::unique_ptr<T> task) {
 	{
 		std::lock_guard lock{ mutex_ };
 		if (stopping_) return; // We are not accepting new tasks
@@ -17,8 +19,8 @@ void ThreadSafeQueue::push(std::unique_ptr<Task> task) {
 	conditionVar_.notify_one();
 }
 
-
-std::unique_ptr<Task> ThreadSafeQueue::waitAndPop() {
+template <typename T>
+std::unique_ptr<T> ThreadSafeQueue<T>::waitAndPop() {
 	std::unique_lock lock{ mutex_ };
 
 	conditionVar_.wait(lock, [this]() {
@@ -37,7 +39,8 @@ std::unique_ptr<Task> ThreadSafeQueue::waitAndPop() {
 
 }
 
-std::unique_ptr<Task> ThreadSafeQueue::tryPopOrNull() {
+template <typename T>
+std::unique_ptr<T> ThreadSafeQueue<T>::tryPopOrNull() {
 	std::lock_guard lock{ mutex_ };
 	if (queue_.empty()) {
 		return nullptr;
@@ -48,18 +51,21 @@ std::unique_ptr<Task> ThreadSafeQueue::tryPopOrNull() {
 	}
 }
 
-bool ThreadSafeQueue::empty() const {
+template <typename T>
+bool ThreadSafeQueue<T>::empty() const {
 	std::lock_guard lock{ mutex_ };
 	return queue_.empty();
 }
 
-void ThreadSafeQueue::stop() {
+template <typename T>
+void ThreadSafeQueue<T>::stop() {
 	std::lock_guard lock{ mutex_ };
 	stopping_ = true;
 	conditionVar_.notify_all();
 }
 
-ThreadSafeQueue::~ThreadSafeQueue() {
+template <typename T>
+ThreadSafeQueue<T>::~ThreadSafeQueue() {
 	//std::cout << std::format("~[ThreadSafeQueue]\n");
 	stop();
 }

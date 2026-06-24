@@ -79,8 +79,8 @@ namespace DTPP {
 
 	
 	private:
-		ThreadSafeQueue queue_;
-		WorkerPool<ThreadSafeQueue> workerPool_;
+		ThreadSafeQueue<Task> queue_;
+		WorkerPool<ThreadSafeQueue<Task>> workerPool_;
 		std::mutex tasksRegistryMutex_;
 		std::unordered_map<Task::Id, Scheduler::TaskInfo> tasksRegistry_;
 		std::atomic<Task::Id> nextId_ = 0;
