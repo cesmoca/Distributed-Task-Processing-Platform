@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <format>
 #include <iostream>
+#include <memory>
 #include <utility>
 
 namespace DTPP {
@@ -28,8 +29,9 @@ namespace DTPP {
 
 	template<typename Queue>
 	void WorkerPool<Queue>::stopAndWait(Worker<Queue>::StopMode stopMode) {
-
-		for (auto& worker : workers_) worker->stopAndWait(stopMode);
+		
+		for (auto& worker : workers_) worker->stop(stopMode); 
+		for (auto& worker: workers_) worker->waitUntilFinished();
 	}
 
 	template<typename Queue>

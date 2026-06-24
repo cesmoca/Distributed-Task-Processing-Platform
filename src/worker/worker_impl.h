@@ -2,6 +2,8 @@
 #include <iostream>
 #include <format>
 #include <string>
+#include <stdexcept>
+#include <thread>
 #include <utility>
 #include <utils.h>
 
@@ -19,14 +21,17 @@ namespace DTPP {
 	}
 
 	template<typename Queue>
-	void Worker<Queue>::stopAndWait(StopMode stopMode) {
+	void Worker<Queue>::stop(StopMode stopMode) {
 		switch (stopMode) {
 			case StopMode::STOP_PROCESSING_TASKS: { thread_.get_stop_source().request_stop(); break; }
 			case StopMode::FINISH_ALL_TASKS_AND_STOP: { stopWhenQueueEmpty = true;  break; }
 			default: throw std::logic_error("Unsupported stop mode");
 		}
-		
-		if(thread_.joinable()) 
+	}
+
+	template<typename Queue>
+	void Worker<Queue>::waitUntilFinished() {
+		if (thread_.joinable())
 			thread_.join();
 	}
 
@@ -61,7 +66,8 @@ namespace DTPP {
 	template <typename Queue>
 	Worker<Queue>::~Worker() {
 		//std::cout << std::format("~[Worker]\n");
-		stopAndWait(StopMode::STOP_PROCESSING_TASKS);
+		stop(StopMode::STOP_PROCESSING_TASKS);
+		waitUntilFinished();
 	}
 
 };

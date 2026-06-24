@@ -3,6 +3,7 @@
 #include <vector>
 #include <atomic>
 #include <functional>
+#include <memory>
 
 #include <common/task.h>
 #include <common/thread_safe_queue.h>

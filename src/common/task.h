@@ -55,6 +55,8 @@ namespace DTPP {
 		}
 
 		Id id() const noexcept { return id_; }
+
+		[[nodiscard]]
 		Result execute() const;
 
 

@@ -27,6 +27,7 @@ namespace DTPP {
 
 		std::unique_ptr<Task> waitAndPop();
 
+		[[nodiscard]]
 		std::unique_ptr<Task> tryPopOrNull();
 
 		bool empty() const;

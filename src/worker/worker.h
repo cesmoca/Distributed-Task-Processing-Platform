@@ -4,6 +4,7 @@
 #include <functional>
 #include <atomic>
 
+#include <common/task.h>
 #include <common/thread_safe_queue.h>
 
 namespace DTPP {
@@ -24,7 +25,9 @@ namespace DTPP {
 			Queue& queue,
 			std::function<void(Task::Id)> onTaskStarted,
 			std::function<void(Task::Id, Task::Result&&)> onTaskCompleted
-			) :	id_(id), queue_(queue), onTaskStarted_(onTaskStarted), onTaskCompleted_(onTaskCompleted) {}
+			) :	id_(id), queue_(queue), 
+			onTaskStarted_(std::move(onTaskStarted)), 
+			onTaskCompleted_(std::move(onTaskCompleted)) {}
 
 
 		// This class owns a std::jthread, so it has to be
@@ -40,7 +43,8 @@ namespace DTPP {
 
 		void start();
 
-		void stopAndWait(StopMode stopMode);
+		void stop(StopMode stopMode);
+		void waitUntilFinished();
 
 	private:
 		Id id_;

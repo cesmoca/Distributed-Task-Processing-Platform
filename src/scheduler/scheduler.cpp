@@ -37,6 +37,7 @@ Task::Status Scheduler::getTaskStatus(Task::Id id) {
 	return it->second.status;
 }
 
+[[nodiscard]]
 Scheduler::TaskInfo Scheduler::getTaskInfo(Task::Id id) {
 	std::lock_guard lock(tasksRegistryMutex_);
 	auto it = tasksRegistry_.find(id);

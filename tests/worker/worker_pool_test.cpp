@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <common/task.h>
+#include <common/thread_safe_queue.h>
 #include <worker/worker_pool.h>
 
 using namespace DTPP;

@@ -1,6 +1,7 @@
 #include <common/thread_safe_queue.h>
 #include <iostream>
 #include <format>
+#include <mutex>
 #include <utility>
 
 using namespace DTPP;

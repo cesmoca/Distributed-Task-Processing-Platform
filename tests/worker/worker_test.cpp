@@ -4,6 +4,9 @@
 #include <chrono>
 #include <memory>
 #include <future>
+#include <atomic>
+#include <iostream>
+#include <thread>
 
 #include <common/task.h>
 #include <test_utils.h>
@@ -25,7 +28,7 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 	std::promise<void> task0FinishPromise{}; 
 	std::promise<void> task1FinishPromise{};
 
-	bool taskCompletedCalled = false;
+	std::atomic<bool> taskCompletedCalled = false;
 
 	auto task0Work = [&]() { 
 		task0FinishPromise.get_future().wait();
@@ -60,7 +63,7 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 		// Let's wait for the first task to be completed
 		bool conditionSuccess = TestUtils::waitForConditionWithTimeout(
 			std::chrono::milliseconds(3000),
-			[&] { return taskCompletedCalled; }
+			[&] { return taskCompletedCalled.load(); }
 		);
 		ASSERT_EQ(true, conditionSuccess);
 	}
@@ -78,8 +81,9 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 	task1FinishPromise.set_value();
 	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stopAndWait(DTPP::Worker<ThreadSafeQueue>::StopMode::FINISH_ALL_TASKS_AND_STOP);
-	
+	worker.stop(DTPP::Worker<ThreadSafeQueue>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+	worker.waitUntilFinished();
+
 	EXPECT_EQ(true, taskCompletedCalled);
 
 	std::cout << "Main thread exiting\n";
@@ -92,7 +96,7 @@ TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
 	std::promise<void> task0FinishPromise{};
 	std::promise<void> task1FinishPromise{};
 
-	bool taskCompletedCalled = false;
+	std::atomic<bool> taskCompletedCalled = false;
 
 	auto task0Work = [&]() {
 		task0FinishPromise.get_future().wait();
@@ -127,7 +131,7 @@ TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
 		// Let's wait for the first task to be completed
 		bool conditionSuccess = TestUtils::waitForConditionWithTimeout(
 			std::chrono::milliseconds(3000),
-			[&] { return taskCompletedCalled; }
+			[&] { return taskCompletedCalled.load(); }
 		);
 		ASSERT_EQ(true, conditionSuccess);
 	}
@@ -145,7 +149,8 @@ TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
 	task1FinishPromise.set_value();
 	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stopAndWait(DTPP::Worker<ThreadSafeQueue>::StopMode::STOP_PROCESSING_TASKS);
+	worker.stop(DTPP::Worker<ThreadSafeQueue>::StopMode::STOP_PROCESSING_TASKS);
+	worker.waitUntilFinished();
 
 	EXPECT_EQ(true, taskCompletedCalled);
 
