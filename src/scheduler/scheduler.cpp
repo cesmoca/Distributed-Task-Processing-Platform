@@ -17,9 +17,14 @@ void Scheduler::start() {
 	workerPool_.start();
 }
 
-void Scheduler::stopAndWait() {
-	queue_.stop();
-	workerPool_.stopAndWait();
+void Scheduler::cancelTasksAndWait() {
+	queue_.stop(); // Cancel all queued tasks
+	workerPool_.stopAndWait(Worker<ThreadSafeQueue>::StopMode::STOP_PROCESSING_TASKS);
+}
+
+void Scheduler::finishTasksAndWait() {
+	queue_.stop(); // We finish the ones that are already queued
+	workerPool_.stopAndWait(Worker<ThreadSafeQueue>::StopMode::FINISH_ALL_TASKS_AND_STOP);
 }
 
 Task::Status Scheduler::getTaskStatus(Task::Id id) {
@@ -69,5 +74,6 @@ void Scheduler::onTaskCompleted(Task::Id id, Task::Result&& result) {
 
 Scheduler::~Scheduler() {
 	//std::cout << std::format("~[Scheduler]\n");
-	stopAndWait();
+	// If the scheduler is being destroyed, let's close as fast as possible
+	cancelTasksAndWait();
 }

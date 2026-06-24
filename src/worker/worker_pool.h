@@ -26,13 +26,13 @@ namespace DTPP {
 
 		void start();
 		
-		void stopAndWait();
+		void stopAndWait(Worker<Queue>::StopMode stopMode);
 
 	private:
 		Queue& queue_;
 		const int workerCount_;
 		std::atomic<typename Worker<Queue>::Id> nextId_;
-		std::vector<Worker<Queue>> workers_;
+		std::vector<std::unique_ptr<Worker<Queue>>> workers_;
 		const std::function<void(Task::Id)> onTaskStarted_;
 		const std::function<void(Task::Id, Task::Result&&)> onTaskCompleted_;
 	};

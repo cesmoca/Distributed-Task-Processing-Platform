@@ -4,15 +4,14 @@
 
 #include <common/task.h>
 #include <worker/worker_pool.h>
-#include <fakes/fake_queue.h>
 
 using namespace DTPP;
 
 TEST(WorkerPool, StartStop_Completes) {
-	FakeQueue queue{};
+	ThreadSafeQueue queue{};
 
 	int workerCount = 1;
-	WorkerPool<FakeQueue> workerPool(
+	WorkerPool<ThreadSafeQueue> workerPool(
 		queue, 
 		workerCount,
 		[](Task::Id) {},
@@ -21,7 +20,7 @@ TEST(WorkerPool, StartStop_Completes) {
 	workerPool.start();
 
 	queue.stop(); // The workers are waiting at the condition var
-	workerPool.stopAndWait();
+	workerPool.stopAndWait(DTPP::Worker<ThreadSafeQueue>::StopMode::FINISH_ALL_TASKS_AND_STOP);
 
 	std::cout << std::format("WorkerPoolTest ended.\n");
 }

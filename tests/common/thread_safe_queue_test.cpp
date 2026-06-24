@@ -49,17 +49,6 @@ TEST(ThreadSafeQueueTest, WaitAndPop_EmptyQueue_Completes) {
 	EXPECT_EQ(value->id(), 0);
 }
 
-TEST(ThreadSafeQueueTest, WaitAndPop_StoppingBeforeWait_Completes) {
-	ThreadSafeQueue queue{};
-
-	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
-
-	queue.stop();
-	auto value = queue.waitAndPop();
-
-	EXPECT_EQ(nullptr, value);
-}
-
 TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
 	ThreadSafeQueue queue{};
 	std::promise<void> promise; // It helps us with synchronization
@@ -79,23 +68,29 @@ TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
 	EXPECT_EQ(value->id(), 0);
 }
 
-
-
-TEST(ThreadSafeQueueTest, Stop_RunsWaitAndPop_Completes) {
+TEST(ThreadSafeQueueTest, Stop_PushTask_NotAdded) {
 	ThreadSafeQueue queue{};
-	std::promise<void> promise; // It helps us with synchronization
+	
+	auto work = [&]() {
+		return Task::Result{ true, "Completed", 0 };
+	};
 
-	// Start with an empty queue, and we simulate
-	//  a worker waiting for a task
-	std::jthread producer([&] {
-		promise.set_value();
-		queue.stop();
+	ASSERT_TRUE(queue.empty());
 
-	});
+	queue.push(std::move(std::make_unique<Task>(0, work)));
 
-	std::future<void> future = promise.get_future();
-	future.get(); // Wait for producer to be ready to requestStop
+	ASSERT_FALSE(queue.empty());
 
-	auto value = queue.waitAndPop();
-	EXPECT_EQ(nullptr, value);
+	// Let's pop the task
+	auto task = queue.tryPopOrNull();
+	ASSERT_TRUE(task != nullptr);
+
+	// Should be empty again
+	ASSERT_TRUE(queue.empty());
+
+	queue.stop();
+
+	queue.push(std::move(std::make_unique<Task>(0, work)));
+
+	ASSERT_TRUE(queue.empty());
 }

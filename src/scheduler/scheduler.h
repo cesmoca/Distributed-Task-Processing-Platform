@@ -68,7 +68,8 @@ namespace DTPP {
 		~Scheduler();
 
 		void start();
-		void stopAndWait();
+		void cancelTasksAndWait();
+		void finishTasksAndWait();
 
 		Task::Status getTaskStatus(Task::Id id);
 		Scheduler::TaskInfo getTaskInfo(Task::Id id);
@@ -83,6 +84,7 @@ namespace DTPP {
 		std::mutex tasksRegistryMutex_;
 		std::unordered_map<Task::Id, Scheduler::TaskInfo> tasksRegistry_;
 		std::atomic<Task::Id> nextId_ = 0;
+		bool acceptingNewTasks = true;
 
 		void onTaskStarted(Task::Id id);
 		void onTaskCompleted(Task::Id id, Task::Result&& result);
@@ -91,6 +93,8 @@ namespace DTPP {
 	// Template functions implementation
 	template <typename Callable>
 	void Scheduler::submitTask(Callable&& task) {
+		if (!acceptingNewTasks) return;
+
 		std::lock_guard lock(tasksRegistryMutex_);
 		Task::Id taskId = nextId_;
 		nextId_++;

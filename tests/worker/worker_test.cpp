@@ -3,60 +3,61 @@
 #include <functional>
 #include <chrono>
 #include <memory>
+#include <future>
 
 #include <common/task.h>
 #include <test_utils.h>
 #include <worker/worker.h>
-#include <fakes/fake_queue.h>
-#include <fakes/fake_task.h>
 
 
 using namespace DTPP;
 
-std::unique_ptr<FakeTask> createFakeTask(std::function<Task::Result()> work) {
-	return std::make_unique<FakeTask>(0, work);
-}
-TEST(WorkerTest, StartStop_SubmitTasks_Completes) {
-	FakeQueue queue{};
+// So the problem is that the thread is already waiting
+//  for the next task, since it is empty. Then we order
+//  the thread to finish all tasks and close. The expected
+//  behaviour is that the thread gets out of that lock
+//  and finishes. BUT it is the queue that can unlock it.
+//  The worker does not have the capacity to unlock by itself
+TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
+	ThreadSafeQueue queue{};
 
-	bool fakeTaskExecuted = false;
-	auto work = [&]() { 
-		fakeTaskExecuted = true;
+	// Let's control when each tasks is finished
+	std::promise<void> task0FinishPromise{}; 
+	std::promise<void> task1FinishPromise{};
+
+	bool taskCompletedCalled = false;
+
+	auto task0Work = [&]() { 
+		task0FinishPromise.get_future().wait();
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		return Task::Result{ true, "Completed", 0 };
 	};
 
-	bool taskStartedCalled = false;
-	bool taskCompletedCalled = false;
+	auto task1Work = [&]() {
+		task1FinishPromise.get_future().wait();
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		return Task::Result{ true, "Completed", 0 };
+	};
 
-	Worker<FakeQueue> worker(0, queue, 
-		[&](Task::Id) { 
-		taskStartedCalled = true;
-	},
+	Worker<ThreadSafeQueue> worker(0, queue,
+		[&](Task::Id) { },
 		[&](Task::Id, Task::Result) { 
-		taskCompletedCalled = true; 
+		taskCompletedCalled = true;
 	});
 
 	worker.start();
 
 	// The queue is empty, so it shouldn't have executed anything yet
-	EXPECT_EQ(false, fakeTaskExecuted);
-	EXPECT_EQ(false, taskStartedCalled);
 	EXPECT_EQ(false, taskCompletedCalled);
-	queue.resetFake();
 
-	queue.push(createFakeTask(work));
+	// Pushing two tasks
+	queue.push(std::move(std::make_unique<Task>(DTPP::Task(0, task0Work))));
+	queue.push(std::move(std::make_unique<Task>(DTPP::Task(1, task1Work))));
 
-	{
-		// Let's call until fakeTaskExecuted it's true (task executed)
-		bool conditionSuccess = TestUtils::waitForConditionWithTimeout(
-			std::chrono::milliseconds(3000),
-			[&] { return fakeTaskExecuted; }
-		);
-		ASSERT_EQ(true, conditionSuccess);
-	}
+	task0FinishPromise.set_value(); // Unlock the first task's execution
 
 	{
-		// Let's wait for the task to be completed
+		// Let's wait for the first task to be completed
 		bool conditionSuccess = TestUtils::waitForConditionWithTimeout(
 			std::chrono::milliseconds(3000),
 			[&] { return taskCompletedCalled; }
@@ -65,18 +66,88 @@ TEST(WorkerTest, StartStop_SubmitTasks_Completes) {
 	}
 
 	// The task should actually have been completed
-	EXPECT_EQ(true, taskStartedCalled);
 	EXPECT_EQ(true, taskCompletedCalled);
 
-	// Now let's requestStop it, no task should be executed
-	fakeTaskExecuted = false;
+	taskCompletedCalled = false;
 
-	queue.resetFake();
+	EXPECT_EQ(false, taskCompletedCalled);
 
+	// Let's stop giving tasks, but the second one should finish
+	queue.stop(); 
+
+	task1FinishPromise.set_value();
+	EXPECT_EQ(false, taskCompletedCalled);
+
+	worker.stopAndWait(DTPP::Worker<ThreadSafeQueue>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+	
+	EXPECT_EQ(true, taskCompletedCalled);
+
+	std::cout << "Main thread exiting\n";
+}
+
+TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
+	ThreadSafeQueue queue{};
+
+	// Let's control when each tasks is finished
+	std::promise<void> task0FinishPromise{};
+	std::promise<void> task1FinishPromise{};
+
+	bool taskCompletedCalled = false;
+
+	auto task0Work = [&]() {
+		task0FinishPromise.get_future().wait();
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		return Task::Result{ true, "Completed", 0 };
+	};
+
+	auto task1Work = [&]() {
+		task1FinishPromise.get_future().wait();
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		return Task::Result{ true, "Completed", 0 };
+	};
+
+	Worker<ThreadSafeQueue> worker(0, queue,
+		[&](Task::Id) {},
+		[&](Task::Id, Task::Result) {
+		taskCompletedCalled = true;
+	});
+
+	worker.start();
+
+	// The queue is empty, so it shouldn't have executed anything yet
+	EXPECT_EQ(false, taskCompletedCalled);
+
+	// Pushing two tasks
+	queue.push(std::move(std::make_unique<Task>(DTPP::Task(0, task0Work))));
+	queue.push(std::move(std::make_unique<Task>(DTPP::Task(1, task1Work))));
+
+	task0FinishPromise.set_value(); // Unlock the first task's execution
+
+	{
+		// Let's wait for the first task to be completed
+		bool conditionSuccess = TestUtils::waitForConditionWithTimeout(
+			std::chrono::milliseconds(3000),
+			[&] { return taskCompletedCalled; }
+		);
+		ASSERT_EQ(true, conditionSuccess);
+	}
+
+	// The task should actually have been completed
+	EXPECT_EQ(true, taskCompletedCalled);
+
+	taskCompletedCalled = false;
+
+	EXPECT_EQ(false, taskCompletedCalled);
+
+	// Let's stop giving tasks, but the second one should finish
 	queue.stop();
-	queue.push(createFakeTask(work));
 
-	EXPECT_EQ(false, fakeTaskExecuted);
+	task1FinishPromise.set_value();
+	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stopAndWait();
+	worker.stopAndWait(DTPP::Worker<ThreadSafeQueue>::StopMode::STOP_PROCESSING_TASKS);
+
+	EXPECT_EQ(true, taskCompletedCalled);
+
+	std::cout << "Main thread exiting\n";
 }

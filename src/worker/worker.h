@@ -2,6 +2,7 @@
 #include <thread>
 #include <cstdint>
 #include <functional>
+#include <atomic>
 
 #include <common/thread_safe_queue.h>
 
@@ -13,6 +14,11 @@ namespace DTPP {
 	public:
 
 		using Id = std::uint64_t;
+
+		enum class StopMode{
+			STOP_PROCESSING_TASKS,
+			FINISH_ALL_TASKS_AND_STOP
+		};
 
 		Worker(Id id, 
 			Queue& queue,
@@ -27,19 +33,20 @@ namespace DTPP {
 		Worker(const Worker&) = delete;
 		Worker& operator=(const Worker&) = delete;
 
-		Worker(Worker&&) = default;
-		Worker& operator=(Worker&&) = default;
+		Worker(Worker&&) = delete;
+		Worker& operator=(Worker&&) = delete;
 
 		~Worker();
 
 		void start();
 
-		void stopAndWait();
+		void stopAndWait(StopMode stopMode);
 
 	private:
 		Id id_;
 		Queue& queue_;
 		std::jthread thread_;
+		std::atomic<bool> stopWhenQueueEmpty = false;
 		const std::function<void(Task::Id)> onTaskStarted_;
 		const std::function<void(Task::Id, Task::Result&&)> onTaskCompleted_;
 

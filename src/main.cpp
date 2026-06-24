@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
 	}
 
-	scheduler.stopAndWait();
+	scheduler.cancelTasksAndWait();
 
 	// Show tasks results
 	for (DTPP::Task::Id id = 0; id < nTasks; ++id) {

@@ -8,21 +8,27 @@ using namespace DTPP;
 void ThreadSafeQueue::push(std::unique_ptr<Task> task) {
 	{
 		std::lock_guard lock{ mutex_ };
+		if (stopping_) return; // We are not accepting new tasks
+
 		queue_.push(std::move(task));
 	}
 
 	conditionVar_.notify_one();
 }
 
+
 std::unique_ptr<Task> ThreadSafeQueue::waitAndPop() {
 	std::unique_lock lock{ mutex_ };
 
 	conditionVar_.wait(lock, [this]() {
-		return !queue_.empty() || stopping_;
+		return !queue_.empty() // A task arrived
+			|| stopping_; // We are not blocking workers
 	});
 
-	// Exit the wait because we are done, not because
-	if (stopping_) return nullptr;
+	// Stopping means that we are shutting down, but
+	//  it is up to the workers to decide what we
+	//  are doing with the remaining tasks
+	if (queue_.empty()) return nullptr;
 
 	auto task = std::move(queue_.front());
 	queue_.pop();

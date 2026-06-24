@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <format>
 #include <iostream>
+#include <utility>
 
 namespace DTPP {
 
@@ -15,27 +16,26 @@ namespace DTPP {
 		for (int i = 0; i < workerCount_; ++i) {
 			typename Worker<Queue>::Id id = nextId_;
 			nextId_++;
-			workers_.emplace_back(id, queue_,
-				onTaskStarted_, onTaskCompleted_);
+			workers_.emplace_back(
+				std::make_unique<Worker<Queue>>(
+					id, queue_, onTaskStarted_, onTaskCompleted_));
 		}
 
 		for (auto& w : workers_) {
-			w.start();
+			w->start();
 		}
 	}
 
 	template<typename Queue>
-	void WorkerPool<Queue>::stopAndWait() {
+	void WorkerPool<Queue>::stopAndWait(Worker<Queue>::StopMode stopMode) {
 
-		// Stop all the workers
-		for (auto& worker : workers_) {
-			worker.stopAndWait();
-		}
+		for (auto& worker : workers_) worker->stopAndWait(stopMode);
 	}
 
 	template<typename Queue>
 	WorkerPool<Queue>::~WorkerPool() {
 		//std::cout << std::format("~[WorkerPool]\n");
-		stopAndWait();
+		// In the destructor, we cancel all tasks and join the workers
+		stopAndWait(Worker<Queue>::StopMode::STOP_PROCESSING_TASKS);
 	}
 };
