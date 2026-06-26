@@ -18,6 +18,8 @@
 >
 > Each phase introduces new concepts while keeping the system functional and understandable.
 >
+> **Current progress:** Phase 1 is in progress. The project currently has an in-memory, templated thread-safe task queue, `std::jthread`-based workers and worker pool, a scheduler that tracks task state, and promise/future-based task-result waiting. The code is covered by GoogleTest unit tests. Networking has not been introduced yet.
+>
 > The sections below describe the long-term goals and architecture of the project.
 
 ---
@@ -132,16 +134,15 @@ Goal:
 * Worker threads
 * Basic task execution
 
-Example tasks:
+Current task model:
 
-* Sleep
-* Sum numbers
-* Count words
-* Fail intentionally
+* Generic callable tasks
+* Task status and result tracking
+* Promise/future-based result waiting
 
 Status:
 
-* ⬜ Not Started
+* 🟨 In Progress
 
 ---
 
