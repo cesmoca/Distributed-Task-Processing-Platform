@@ -31,13 +31,6 @@ namespace DTPP {
 			Type3,
 		};
 
-		enum class Status {
-			Pending,
-			Running,
-			Completed,
-			Failed
-		};
-
 		struct Result {
 			bool success;
 			std::string message;

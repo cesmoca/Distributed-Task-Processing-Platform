@@ -11,31 +11,37 @@
 
 namespace DTPP {
 
-	template <typename Queue>
+	template <typename T>
 	class WorkerPool{
 
 	public:
 
-		WorkerPool(Queue& queue, 
+		WorkerPool(ThreadSafeQueue<T>& queue, 
 			int workerCount, 
 			std::function<void(Task::Id)> onTaskStarted,
-			std::function<void(Task::Id, Task::Result&&)> onTaskCompleted
-		) : queue_(queue), workerCount_(workerCount), nextId_(0),
-			onTaskStarted_(onTaskStarted), onTaskCompleted_(onTaskCompleted){}
+			std::function<void(Task::Id, Task::Result&&)> onTaskCompleted,
+			std::function<void(Task::Id)> onTaskCancelled
+		) : queue_(queue), 
+			workerCount_(workerCount), 
+			nextId_(0),
+			onTaskStarted_(std::move(onTaskStarted)),
+			onTaskCompleted_(std::move(onTaskCompleted)),
+			onTaskCancelled_(std::move(onTaskCancelled)) {}
 
 		~WorkerPool();
 
 		void start();
 		
-		void stopAndWait(Worker<Queue>::StopMode stopMode);
+		void stopAndWait(Worker<T>::StopMode stopMode);
 
 	private:
-		Queue& queue_;
+		ThreadSafeQueue<T>& queue_;
 		const int workerCount_;
-		std::atomic<typename Worker<Queue>::Id> nextId_;
-		std::vector<std::unique_ptr<Worker<Queue>>> workers_;
+		std::atomic<typename Worker<T>::Id> nextId_;
+		std::vector<std::unique_ptr<Worker<T>>> workers_;
 		const std::function<void(Task::Id)> onTaskStarted_;
 		const std::function<void(Task::Id, Task::Result&&)> onTaskCompleted_;
+		const std::function<void(Task::Id)> onTaskCancelled_;
 	};
 
 }

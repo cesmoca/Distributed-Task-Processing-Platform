@@ -13,7 +13,6 @@
 #include <test_utils.h>
 #include <task_test.h>
 
-
 using namespace DTPP;
 using namespace TestUtils;
 
@@ -26,7 +25,6 @@ using namespace TestUtils;
 TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 	ThreadSafeQueue<TaskTest> queue{};
 
-
 	std::atomic<bool> taskCompletedCalled = false;
 
 	auto task0 = std::make_unique<TaskTest>(0);
@@ -35,11 +33,10 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 	auto task1 = std::make_unique<TaskTest>(0);
 	auto task1Tester = task1->tester();
 
-	Worker<ThreadSafeQueue<TaskTest>> worker(0, queue,
+	Worker<TaskTest> worker(0, queue,
 		[&](Task::Id) { },
-		[&](Task::Id, Task::Result) { 
-		taskCompletedCalled = true;
-	});
+		[&](Task::Id, Task::Result) { taskCompletedCalled = true; },
+		[&](Task::Id) {});
 
 	worker.start();
 
@@ -75,7 +72,7 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 
 	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stop(DTPP::Worker<ThreadSafeQueue<TaskTest>>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+	worker.stop(DTPP::Worker<TaskTest>::StopMode::FINISH_ALL_TASKS_AND_STOP);
 	worker.waitUntilFinished();
 
 	EXPECT_EQ(true, taskCompletedCalled);
@@ -83,7 +80,7 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 	std::cout << "Main thread exiting\n";
 }
 
-TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
+TEST(WorkerTest, CancelTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 	ThreadSafeQueue<TaskTest> queue{};
 
 	std::atomic<bool> taskCompletedCalled = false;
@@ -94,11 +91,10 @@ TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
 	auto task1 = std::make_unique<TaskTest>(0);
 	auto task1Tester = task1->tester();
 
-	Worker<ThreadSafeQueue<TaskTest>> worker(0, queue,
+	Worker<TaskTest> worker(0, queue,
 		[&](Task::Id) {},
-		[&](Task::Id, Task::Result) {
-		taskCompletedCalled = true;
-	});
+		[&](Task::Id, Task::Result) { taskCompletedCalled = true; },
+		[&](Task::Id) {});
 
 	worker.start();
 
@@ -134,7 +130,7 @@ TEST(WorkerTest, StopProcessingTasks_SubmitsTwoTasks_AllTaksComplete) {
 
 	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stop(DTPP::Worker<ThreadSafeQueue<TaskTest>>::StopMode::STOP_PROCESSING_TASKS);
+	worker.stop(DTPP::Worker<TaskTest>::StopMode::CANCEL_TASKS_AND_STOP);
 	worker.waitUntilFinished();
 
 	EXPECT_EQ(true, taskCompletedCalled);

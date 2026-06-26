@@ -15,39 +15,66 @@ using namespace std::chrono_literals;
 void waitForTaskToComplete(Scheduler& scheduler, Task::Id taskId) {
 	auto timeout = std::chrono::seconds(3);
 	TestUtils::waitForConditionWithTimeout(timeout, [&scheduler] {
-		return scheduler.getTaskStatus(0) == Task::Status::Completed;
+		return scheduler.getTaskStatus(0) == Scheduler::Status::Completed;
 	});
 }
+
 TEST(SchedulerTest, SubmitTask_CancelTasksAndWait_NotAllFinished) {
 	const int N_TASKS = 5;
-	const int N_WORKERS = 2;
+	const int N_WORKERS = 1;
 
 	std::atomic<int> nTasksCompleted = 0;
 
 	auto task = [&nTasksCompleted]() {
-		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 		nTasksCompleted++;
 		return Task::Result{ true, "Completed", 0 };
 	};
 
 	Scheduler scheduler(N_WORKERS);
 
-	for (int i = 0; i < N_TASKS; ++i) { scheduler.submitTask(task); }
+	// Let's submit the tasks, but wait for the first one
+	auto task0Future = scheduler.submitTask(task);;
+	for (int i = 1; i < N_TASKS; ++i) { scheduler.submitTask(task); }
 
 	// Check that there should be nTasks pending tasks
 	for (Task::Id id = 0; id < N_TASKS; ++id) {
-		EXPECT_EQ(Task::Status::Pending, scheduler.getTaskStatus(id));
+		EXPECT_EQ(Scheduler::Status::Pending, scheduler.getTaskStatus(id));
 	}
 
 	scheduler.start();
 
+	// Wait for the first one to finish, to make sure there is
+	//  at least one that has completed
+	auto taskInfo = task0Future.value().get();
+
+	EXPECT_EQ(Scheduler::Status::Completed, taskInfo.status);
+
+	// And now, let's cancel the rest
 	scheduler.cancelTasksAndWait();
 
 	// Check that not all the tasks have been finished
+	EXPECT_TRUE(nTasksCompleted > 0);
 	EXPECT_TRUE(nTasksCompleted < N_TASKS);
+
+	// TODO check which tasks are completed and which tasks are cancelled.
+	int nTasksStatusCompleted = 0;
+	int nTasksStatusCancelled = 0;
+
+	for (int i = 0; i < N_TASKS; i++) {
+		auto status = scheduler.getTaskStatus(i);
+		switch (status) {
+		case Scheduler::Status::Completed: nTasksStatusCompleted++; break;
+		case Scheduler::Status::Cancelled: nTasksStatusCancelled++; break;
+		default: ASSERT_TRUE(false);
+		}
+	}
+
+	EXPECT_EQ(N_TASKS, nTasksStatusCompleted + nTasksStatusCancelled);
+	EXPECT_EQ(nTasksCompleted, nTasksCompleted);
 }
 
-TEST(SchedulerTest, SubmitTask_finishTasksAndWait_AllFinished) {
+TEST(SchedulerTest, SubmitTask_FinishTasksAndWait_AllFinished) {
 	const int N_TASKS = 5;
 	const int N_WORKERS = 2;
 
@@ -65,7 +92,7 @@ TEST(SchedulerTest, SubmitTask_finishTasksAndWait_AllFinished) {
 
 	// Check that there should be nTasks pending tasks
 	for (Task::Id id = 0; id < N_TASKS; ++id) {
-		EXPECT_EQ(Task::Status::Pending, scheduler.getTaskStatus(id));
+		EXPECT_EQ(Scheduler::Status::Pending, scheduler.getTaskStatus(id));
 	}
 
 	scheduler.start();
@@ -75,7 +102,7 @@ TEST(SchedulerTest, SubmitTask_finishTasksAndWait_AllFinished) {
 
 	// Check that there should be nTasks completed tasks
 	for (Task::Id id = 0; id < N_TASKS; ++id) {
-		EXPECT_EQ(Task::Status::Completed, scheduler.getTaskStatus(id));
+		EXPECT_EQ(Scheduler::Status::Completed, scheduler.getTaskStatus(id));
 	}
 }
 
@@ -109,11 +136,11 @@ TEST(SchedulerTest, SubmitTask_TaskCompletes_CorrectTimeFields) {
 
 	scheduler.submitTask(task);
 
-	EXPECT_TRUE(scheduler.getTaskStatus(0) != Task::Status::Completed);
+	EXPECT_TRUE(scheduler.getTaskStatus(0) != Scheduler::Status::Completed);
 
 	waitForTaskToComplete(scheduler, 0);
 
-	EXPECT_EQ(scheduler.getTaskStatus(0), Task::Status::Completed);
+	EXPECT_EQ(scheduler.getTaskStatus(0), Scheduler::Status::Completed);
 
 	auto durationMs = scheduler.getTaskInfo(0).getDurationMs();
 
@@ -145,7 +172,7 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
 	taskStartedPromise.get_future().wait();
 
 	// This time we do not wait for the task to finish, so it should not be completed
-	EXPECT_TRUE(scheduler.getTaskStatus(0) != Task::Status::Completed);
+	EXPECT_TRUE(scheduler.getTaskStatus(0) != Scheduler::Status::Completed);
 
 	auto durationMs = scheduler.getTaskInfo(0).getDurationMs();
 
@@ -176,7 +203,7 @@ TEST(SchedulerTest, SubmitTaskAndWait_WaitForTask_Completes) {
 	auto taskInfo = taskFuture.value().get();
 	auto taskStatus = scheduler.getTaskStatus(0);
 
-	EXPECT_EQ(Task::Status::Completed, taskStatus);
+	EXPECT_EQ(Scheduler::Status::Completed, taskStatus);
 	EXPECT_EQ(0, taskInfo.id);
 	EXPECT_EQ(true, taskInfo.result.value().success);
 	EXPECT_EQ("Completed", taskInfo.result.value().message);

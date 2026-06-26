@@ -20,9 +20,17 @@ namespace DTPP {
 	class Scheduler {
 	public:
 		
+		enum class Status {
+			Pending,
+			Running,
+			Completed,
+			Failed,
+			Cancelled
+		};
+
 		struct TaskInfo {
 			Task::Id id;
-			Task::Status status;
+			Scheduler::Status status;
 			std::optional<Task::Result> result;
 
 			Task::Timestamp createdAt;
@@ -42,10 +50,10 @@ namespace DTPP {
 			std::string toString() const {
 				std::string statusStr;
 				switch (status) {
-				case Task::Status::Pending: statusStr = "Pending"; break;
-				case Task::Status::Running: statusStr = "Running"; break;
-				case Task::Status::Completed: statusStr = "Completed"; break;
-				case Task::Status::Failed: statusStr = "Failed"; break;
+				case Scheduler::Status::Pending: statusStr = "Pending"; break;
+				case Scheduler::Status::Running: statusStr = "Running"; break;
+				case Scheduler::Status::Completed: statusStr = "Completed"; break;
+				case Scheduler::Status::Failed: statusStr = "Failed"; break;
 				default: throw std::logic_error("Not all Task::Result implemented in toString");
 				}
 
@@ -64,7 +72,8 @@ namespace DTPP {
 			workerPool_(queue_, 
 				nWorkers,
 				[this](Task::Id id) { onTaskStarted(id); },
-				[this](Task::Id id, Task::Result&& result) { onTaskCompleted(id, std::move(result));  }) {}
+				[this](Task::Id id, Task::Result&& result) { onTaskCompleted(id, std::move(result));  },
+				[this](Task::Id id) { onTaskCancelled(id);  }) {}
 
 		~Scheduler();
 
@@ -72,7 +81,7 @@ namespace DTPP {
 		void cancelTasksAndWait();
 		void finishTasksAndWait();
 
-		Task::Status getTaskStatus(Task::Id id);
+		Scheduler::Status getTaskStatus(Task::Id id);
 		Scheduler::TaskInfo getTaskInfo(Task::Id id);
 
 		template <typename Callable>
@@ -98,7 +107,7 @@ namespace DTPP {
 		};
 
 		ThreadSafeQueue<Task> queue_;
-		WorkerPool<ThreadSafeQueue<Task>> workerPool_;
+		WorkerPool<Task> workerPool_;
 		std::mutex tasksRegistryMutex_;
 		std::unordered_map<Task::Id, InternalTaskInfo> tasksRegistry_;
 		std::atomic<Task::Id> nextId_ = 0;
@@ -106,6 +115,7 @@ namespace DTPP {
 
 		void onTaskStarted(Task::Id id);
 		void onTaskCompleted(Task::Id id, Task::Result&& result);
+		void onTaskCancelled(Task::Id id);
 	};
 
 	// Template functions implementation
@@ -118,7 +128,7 @@ namespace DTPP {
 		nextId_++;
 
 		// Create the taskInfo and push it to the taskRegistry
-		Scheduler::TaskInfo taskInfo{ taskId, Task::Status::Pending };
+		Scheduler::TaskInfo taskInfo{ taskId, Scheduler::Status::Pending };
 		taskInfo.createdAt = Task::Timestamp(std::chrono::steady_clock::now());
 		tasksRegistry_.emplace(taskId, std::move(InternalTaskInfo(taskInfo)));
 

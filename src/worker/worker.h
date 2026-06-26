@@ -10,7 +10,7 @@
 
 namespace DTPP {
 
-	template<typename Queue>
+	template<typename T>
 	class Worker {
 
 	public:
@@ -18,17 +18,19 @@ namespace DTPP {
 		using Id = std::uint64_t;
 
 		enum class StopMode{
-			STOP_PROCESSING_TASKS,
+			CANCEL_TASKS_AND_STOP,
 			FINISH_ALL_TASKS_AND_STOP
 		};
 
 		Worker(Id id, 
-			Queue& queue,
+			ThreadSafeQueue<T>& queue,
 			std::function<void(Task::Id)> onTaskStarted,
-			std::function<void(Task::Id, Task::Result&&)> onTaskCompleted
+			std::function<void(Task::Id, Task::Result&&)> onTaskCompleted,
+			std::function<void(Task::Id)> onTaskCancelled
 			) :	id_(id), queue_(queue), 
 			onTaskStarted_(std::move(onTaskStarted)), 
-			onTaskCompleted_(std::move(onTaskCompleted)) {}
+			onTaskCompleted_(std::move(onTaskCompleted)),
+			onTaskCancelled_(std::move(onTaskCancelled)){}
 
 
 		// This class owns a std::jthread, so it has to be
@@ -49,13 +51,15 @@ namespace DTPP {
 
 	private:
 		Id id_;
-		Queue& queue_;
+		ThreadSafeQueue<T>& queue_;
 		std::jthread thread_;
-		std::atomic<bool> stopWhenQueueEmpty = false;
+		std::optional<StopMode> stopMode_;
 		const std::function<void(Task::Id)> onTaskStarted_;
 		const std::function<void(Task::Id, Task::Result&&)> onTaskCompleted_;
+		const std::function<void(Task::Id)> onTaskCancelled_;
 
 		void run(std::stop_token stopToken);
+		void performTask(std::unique_ptr<T>& task);
 
 	};
 }

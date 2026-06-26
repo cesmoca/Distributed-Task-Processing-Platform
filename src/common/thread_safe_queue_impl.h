@@ -31,7 +31,8 @@ std::unique_ptr<T> ThreadSafeQueue<T>::waitAndPop() {
 
 	// Stopping means that we are shutting down, but
 	//  it is up to the workers to decide what we
-	//  are doing with the remaining tasks
+	//  are doing with the remaining tasks. So
+	//  the tasks basically runs until empty
 	if (queue_.empty()) return nullptr;
 
 	auto task = std::move(queue_.front());

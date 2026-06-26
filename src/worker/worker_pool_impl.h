@@ -8,18 +8,18 @@
 
 namespace DTPP {
 
-	template<typename Queue>
-	void WorkerPool<Queue>::start() {
+	template<typename T>
+	void WorkerPool<T>::start() {
 
 		workers_.reserve(workerCount_);
 
 		// Create and start the worker counts
 		for (int i = 0; i < workerCount_; ++i) {
-			typename Worker<Queue>::Id id = nextId_;
+			typename Worker<T>::Id id = nextId_;
 			nextId_++;
 			workers_.emplace_back(
-				std::make_unique<Worker<Queue>>(
-					id, queue_, onTaskStarted_, onTaskCompleted_));
+				std::make_unique<Worker<T>>(
+					id, queue_, onTaskStarted_, onTaskCompleted_, onTaskCancelled_));
 		}
 
 		for (auto& w : workers_) {
@@ -27,17 +27,17 @@ namespace DTPP {
 		}
 	}
 
-	template<typename Queue>
-	void WorkerPool<Queue>::stopAndWait(Worker<Queue>::StopMode stopMode) {
+	template<typename T>
+	void WorkerPool<T>::stopAndWait(Worker<T>::StopMode stopMode) {
 		
 		for (auto& worker : workers_) worker->stop(stopMode); 
 		for (auto& worker: workers_) worker->waitUntilFinished();
 	}
 
-	template<typename Queue>
-	WorkerPool<Queue>::~WorkerPool() {
+	template<typename T>
+	WorkerPool<T>::~WorkerPool() {
 		//std::cout << std::format("~[WorkerPool]\n");
 		// In the destructor, we cancel all tasks and join the workers
-		stopAndWait(Worker<Queue>::StopMode::STOP_PROCESSING_TASKS);
+		stopAndWait(Worker<T>::StopMode::CANCEL_TASKS_AND_STOP);
 	}
 };
