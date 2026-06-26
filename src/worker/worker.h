@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <atomic>
+#include <utility>
 
 #include <common/task.h>
 #include <common/thread_safe_queue.h>

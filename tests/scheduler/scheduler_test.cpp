@@ -5,10 +5,12 @@
 #include <thread>
 #include <future>
 
+#include <common/task.h>
 #include <scheduler/scheduler.h>
 #include <test_utils.h>
 
 using namespace DTPP;
+using namespace std::chrono_literals;
 
 void waitForTaskToComplete(Scheduler& scheduler, Task::Id taskId) {
 	auto timeout = std::chrono::seconds(3);
@@ -16,7 +18,7 @@ void waitForTaskToComplete(Scheduler& scheduler, Task::Id taskId) {
 		return scheduler.getTaskStatus(0) == Task::Status::Completed;
 	});
 }
-TEST(SchedulerTest, SubmitTasks_CancelTasksAndWait_NotAllFinished) {
+TEST(SchedulerTest, SubmitTask_CancelTasksAndWait_NotAllFinished) {
 	const int N_TASKS = 5;
 	const int N_WORKERS = 2;
 
@@ -45,7 +47,7 @@ TEST(SchedulerTest, SubmitTasks_CancelTasksAndWait_NotAllFinished) {
 	EXPECT_TRUE(nTasksCompleted < N_TASKS);
 }
 
-TEST(SchedulerTest, SubmitTasks_finishTasksAndWait_AllFinished) {
+TEST(SchedulerTest, SubmitTask_finishTasksAndWait_AllFinished) {
 	const int N_TASKS = 5;
 	const int N_WORKERS = 2;
 
@@ -152,4 +154,32 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
 	// Shutdown
 	taskWorkPromise.set_value();
 	scheduler.cancelTasksAndWait();
+}
+
+TEST(SchedulerTest, SubmitTaskAndWait_WaitForTask_Completes) {
+	
+
+	auto taskWork = []() {
+		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+		return Task::Result{ true, "Completed", 0 };
+	};
+
+	Scheduler scheduler(1);
+
+	scheduler.start();
+
+	// Let's wait until all the tasks have finished
+	auto taskFuture = scheduler.submitTask(taskWork);
+
+	taskFuture.value().wait();
+
+	auto taskInfo = taskFuture.value().get();
+	auto taskStatus = scheduler.getTaskStatus(0);
+
+	EXPECT_EQ(Task::Status::Completed, taskStatus);
+	EXPECT_EQ(0, taskInfo.id);
+	EXPECT_EQ(true, taskInfo.result.value().success);
+	EXPECT_EQ("Completed", taskInfo.result.value().message);
+	EXPECT_EQ(0, taskInfo.result.value().data);
+	EXPECT_TRUE(taskInfo.getDurationMs() > 0ms);
 }

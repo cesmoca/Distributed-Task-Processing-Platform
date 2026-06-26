@@ -3,6 +3,7 @@
 #include <future>
 #include <format>
 #include <thread>
+#include <utility>
 
 #include <common/thread_safe_queue.h>
 #include <common/task.h>

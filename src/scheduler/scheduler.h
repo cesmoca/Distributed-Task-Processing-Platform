@@ -9,6 +9,7 @@
 #include <string>
 #include <format>
 #include <chrono>
+#include <future>
 
 #include <common/task.h>
 #include <common/thread_safe_queue.h>
@@ -75,14 +76,31 @@ namespace DTPP {
 		Scheduler::TaskInfo getTaskInfo(Task::Id id);
 
 		template <typename Callable>
-		void submitTask(Callable&& task);
+		std::optional<std::future<Scheduler::TaskInfo>> submitTask(Callable&& task);
 
 	
 	private:
+
+		class InternalTaskInfo {
+		public:
+			InternalTaskInfo(const TaskInfo& taskInfo): taskInfo(taskInfo){}
+
+			// Let's make this non copyable for starters, since it has a promise
+			InternalTaskInfo(const InternalTaskInfo&) = delete;
+			InternalTaskInfo operator=(const InternalTaskInfo&) = delete;
+
+			InternalTaskInfo(InternalTaskInfo&&) = default;
+			InternalTaskInfo& operator=(InternalTaskInfo&&) = default;
+
+			TaskInfo taskInfo;
+			std::optional<Task::Result> taskResult;
+			std::promise<TaskInfo> promiseTaskInfo;
+		};
+
 		ThreadSafeQueue<Task> queue_;
 		WorkerPool<ThreadSafeQueue<Task>> workerPool_;
 		std::mutex tasksRegistryMutex_;
-		std::unordered_map<Task::Id, Scheduler::TaskInfo> tasksRegistry_;
+		std::unordered_map<Task::Id, InternalTaskInfo> tasksRegistry_;
 		std::atomic<Task::Id> nextId_ = 0;
 		bool acceptingNewTasks = true;
 
@@ -92,8 +110,8 @@ namespace DTPP {
 
 	// Template functions implementation
 	template <typename Callable>
-	void Scheduler::submitTask(Callable&& task) {
-		if (!acceptingNewTasks) return;
+	std::optional<std::future<Scheduler::TaskInfo>> Scheduler::submitTask(Callable&& task) {
+		if (!acceptingNewTasks) return std::nullopt;
 
 		std::lock_guard lock(tasksRegistryMutex_);
 		Task::Id taskId = nextId_;
@@ -102,7 +120,9 @@ namespace DTPP {
 		// Create the taskInfo and push it to the taskRegistry
 		Scheduler::TaskInfo taskInfo{ taskId, Task::Status::Pending };
 		taskInfo.createdAt = Task::Timestamp(std::chrono::steady_clock::now());
-		tasksRegistry_.emplace(taskId, taskInfo);
+		tasksRegistry_.emplace(taskId, std::move(InternalTaskInfo(taskInfo)));
+
+		auto& internalTaskInfo = tasksRegistry_.at(taskId);
 
 		queue_.push(
 			std::make_unique<Task>(
@@ -110,7 +130,8 @@ namespace DTPP {
 				std::forward<Callable>(task)
 			)
 		);
+
+		return internalTaskInfo.promiseTaskInfo.get_future();
 	}
 
 };
-
