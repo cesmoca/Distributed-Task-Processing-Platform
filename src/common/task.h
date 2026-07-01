@@ -31,6 +31,11 @@ namespace DTPP {
 			Type3,
 		};
 
+		struct CancelRequest {
+			bool request_cancel() { requested = true; }
+			bool requested = false;
+		};
+
 		struct Result {
 			bool success;
 			std::string message;
@@ -43,6 +48,7 @@ namespace DTPP {
 		};
 
 		template <typename Callable>
+		requires std::same_as<std::invoke_result_t<Callable, const bool&>, Task::Result>
 		Task(Id id, Callable&& work) : Task(id) {
 			work_ = std::forward<Callable>(work);
 		}
@@ -50,12 +56,12 @@ namespace DTPP {
 		Id id() const noexcept { return id_; }
 
 		[[nodiscard]]
-		Result execute() const;
+		Result execute(CancelRequest& cancelRequest) const;
 
 
 	private:
 		Id id_;
-		std::function<Task::Result()> work_;
+		std::function<Task::Result(bool&)> work_;
 
 		Task(Id id) : id_(id) {}
 

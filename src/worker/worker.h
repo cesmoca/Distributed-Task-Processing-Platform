@@ -55,6 +55,7 @@ namespace DTPP {
 		ThreadSafeQueue<T>& queue_;
 		std::jthread thread_;
 		std::optional<StopMode> stopMode_;
+		Task::CancelRequest cancelRequest_;
 		std::mutex mutex_;
 		const std::function<void(Task::Id)> onTaskStarted_;
 		const std::function<void(Task::Id, Task::Result&&)> onTaskCompleted_;

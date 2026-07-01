@@ -78,36 +78,7 @@ namespace DTPP {
 				if (stopToken.stop_requested()) running = false;
 
 			}
-
 		}
-
-		// Stop when queue empty is ALWAYS
-
-		//while (!stopToken.stop_requested()) {
-		//	
-		//	// So this logic decides
-		//	//  - When we are still running tasks normally
-		//	//  - When we are running tasks normally until de queue is empty, then stop
-		//	//  - When we are not doing any more tasks, and mark them as cancelled,
-		//	//		all until the queue is empty again.
-		//	if (stopWhenQueueEmpty && queue_.empty()) break;
-
-		//	auto task = queue_.waitAndPop(); // Wait for a task to be available in the queue
-
-		//	if (stopToken.stop_requested()) break;
-
-		//	if (task) {
-		//		std::cout << std::format("[Worker {} {} {}] Executing task {}...\n", id_, static_cast<const void*>(this), Utils::threadId(), task->id());
-		//		
-		//		onTaskStarted_(task->id());
-
-		//		auto result = task->execute();
-
-		//		onTaskCompleted_(task->id(), std::move(result));
-		//	}
-
-		//}
-
 
 		std::cout << std::format("[Worker {} {} {}] Worker finished\n", id_, static_cast<const void*>(this), Utils::threadId());
 	}
@@ -118,7 +89,7 @@ namespace DTPP {
 
 		onTaskStarted_(task->id());
 
-		auto result = task->execute();
+		auto result = task->execute(cancelRequest_);
 
 		onTaskCompleted_(task->id(), std::move(result));
 	}

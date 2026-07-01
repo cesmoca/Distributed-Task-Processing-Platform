@@ -86,6 +86,7 @@ namespace DTPP {
 		Scheduler::TaskInfo getTaskInfo(Task::Id id);
 
 		template <typename Callable>
+		requires std::same_as<std::invoke_result_t<Callable, const bool&>, Task::Result>
 		std::optional<std::future<Scheduler::TaskInfo>> submitTask(Callable&& task);
 
 	
@@ -121,6 +122,7 @@ namespace DTPP {
 
 	// Template functions implementation
 	template <typename Callable>
+	requires std::same_as<std::invoke_result_t<Callable, const bool&>, Task::Result>
 	std::optional<std::future<Scheduler::TaskInfo>> Scheduler::submitTask(Callable&& task) {
 		if (!acceptingNewTasks) return std::nullopt;
 

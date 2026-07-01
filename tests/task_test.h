@@ -29,7 +29,7 @@ namespace TestUtils {
 		Task::Id id() const noexcept { return id_; }
 
 		[[nodiscard]]
-		Task::Result execute() const {
+		Task::Result execute(Task::CancelRequest& cancelRequest) const {
 			work_();
 			return tester_->result;
 		}

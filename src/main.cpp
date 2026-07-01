@@ -26,13 +26,15 @@ std::uint64_t randomInt(int min, int max)
 	return dist(gen);
 }
 
-std::function<DTPP::Task::Result()> createWork() {
+std::function<DTPP::Task::Result(const bool&)> createWork() {
 
-	return []() {
+	return [](const bool& cancelRequested) {
 
-		int waitTimeMs = randomInt(200, 500);
+		int waitTimeMs = randomInt(500, 1500) / 10;
 		for (int i = 0; i < 10; ++i) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
+			if (cancelRequested) break;
+
 		}
 		return DTPP::Task::Result{ true, "Task completed successfully", 0 };
 	};
@@ -73,7 +75,7 @@ int main(int argc, char* argv[]) {
 		std::cout << taskInfo.toString() << std::endl;
 	}
 
-		std::cout << std::format("[Main Loop] End reached\n");
+	std::cout << std::format("[Main Loop] End reached\n");
 
-		return 0;
-	}
+	return 0;
+}

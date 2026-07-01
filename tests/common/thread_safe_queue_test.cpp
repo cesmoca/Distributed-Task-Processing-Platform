@@ -15,7 +15,7 @@ TEST(ThreadSafeQueueTest, TryPopOrNull_PopTask_CorrectFields) {
 
 	EXPECT_TRUE(queue.empty());
 
-	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
+	queue.push(std::make_unique<Task>(0, [](const bool& cancelRequested) { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
 	auto task = queue.tryPopOrNull();
 
@@ -26,7 +26,7 @@ TEST(ThreadSafeQueueTest, TryPopOrNull_PopTask_CorrectFields) {
 TEST(ThreadSafeQueueTest, TryPopOrNull_NotNullTask_CorrectFields) {
 	ThreadSafeQueue<Task> queue{};
 
-	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
+	queue.push(std::make_unique<Task>(0, [](const bool& cancelRequested) { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
 	auto task = queue.tryPopOrNull();
 
@@ -45,7 +45,7 @@ TEST(ThreadSafeQueueTest, TryPopOrNull_NullTask_ReturnsNullPtr) {
 TEST(ThreadSafeQueueTest, WaitAndPop_EmptyQueue_Completes) {
 	ThreadSafeQueue<Task> queue{};
 	
-	queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; } ));
+	queue.push(std::make_unique<Task>(0, [](const bool& cancelRequested) { return Task::Result{ false, "Task 1 failed", -1 }; } ));
 
 	auto value = queue.waitAndPop();
 
@@ -60,7 +60,7 @@ TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
 	//  a worker waiting for a task
 	std::jthread producer([&] {
 		promise.set_value();
-		queue.push(std::make_unique<Task>(0, []() { return Task::Result{ false, "Task 1 failed", -1 }; }));
+		queue.push(std::make_unique<Task>(0, [](const bool& cancelRequested) { return Task::Result{ false, "Task 1 failed", -1 }; }));
 
 	});
 
@@ -74,7 +74,7 @@ TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
 TEST(ThreadSafeQueueTest, Stop_PushTask_NotAdded) {
 	ThreadSafeQueue<Task> queue{};
 	
-	auto taskWork = [&]() {
+	auto taskWork = [&](const bool& cancelRequested) {
 		return Task::Result{ true, "Completed", 0 };
 	};
 

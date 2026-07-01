@@ -27,7 +27,7 @@ TEST(SchedulerTest, SubmitTask_CancelTasksAndWait_NotAllFinished) {
 
 	std::atomic<int> nTasksCompleted = 0;
 
-	auto taskWork = [&nTasksCompleted]() {
+	auto taskWork = [&nTasksCompleted](const bool& cancelRequested) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 		nTasksCompleted++;
 		return Task::Result{ true, "Completed", 0 };
@@ -82,7 +82,7 @@ TEST(SchedulerTest, SubmitTask_FinishTasksAndWait_AllFinished) {
 
 	std::atomic<int> nTasksCompleted = 0;
 
-	auto task = [&nTasksCompleted]() {
+	auto task = [&nTasksCompleted](const bool& cancelRequested) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 		nTasksCompleted++;
 		return Task::Result{ true, "Completed", 0 };
@@ -113,7 +113,7 @@ TEST(SchedulerTest, TrackTask_UnexistingTask_ThrowsException) {
 	const int N_TASKS = 1;
 	const int N_WORKERS = 4;
 
-	auto task = []() { return Task::Result{ true,	"Completed", 0 }; };
+	auto task = [](const bool& cancelRequested) { return Task::Result{ true,	"Completed", 0 }; };
 
 	Scheduler scheduler(N_WORKERS);
 
@@ -126,7 +126,7 @@ TEST(SchedulerTest, TrackTask_UnexistingTask_ThrowsException) {
 TEST(SchedulerTest, SubmitTask_TaskCompletes_CorrectTimeFields) {
 
 	// Executing one task with one worker
-	auto taskWork = []() {
+	auto taskWork = [](const bool& cancelRequested) {
 		// Task that takes 150 ms to finish
 		std::this_thread::sleep_for(std::chrono::milliseconds(150));
 		return Task::Result{ true,	"Completed", 0 };;
@@ -155,7 +155,7 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
 	std::promise<void> taskWorkPromise;
 
 	// Executing one task with one worker
-	auto taskWork = [&]() {
+	auto taskWork = [&](const bool& cancelRequested) {
 		taskStartedPromise.set_value();;
 
 		// Let's simulate a task working for a long time
@@ -188,7 +188,7 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
 TEST(SchedulerTest, SubmitTaskAndWait_WaitForTask_Completes) {
 	
 
-	auto taskWork = []() {
+	auto taskWork = [](const bool& cancelRequested) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 		return Task::Result{ true, "Completed", 0 };
 	};
@@ -220,7 +220,7 @@ TEST(SchedulerTest, CancelAllTasks_WaitForTask_Fullfillspromise) {
 	// We create a cooperative task so that it can be cancelled
 	//  half way and report it. Not as completed or failed, but
 	//  as cancelled
-	auto taskWork = []() {
+	auto taskWork = [](const bool& cancelRequested) {
 		for (int i = 0; i < 100; ++i) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			// TODO here we check if the tasks has been cancelled cooperatively
