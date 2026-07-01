@@ -1,0 +1,24 @@
+diff a/tests/task_test.h b/tests/task_test.h	(rejected hunks)
+@@ -36,17 +39,17 @@ namespace TestUtils {
+ 		}
+ 
+ 	private:
+-		DTPP::Task::Id id_;
++		Task::Id id_;
+ 		std::shared_ptr<Tester> tester_ = std::make_shared<Tester>();
+ 
+ 
+-		std::function<DTPP::Task::Result()> defaultWork_ = [this] {
++		std::function<Task::Result()> defaultWork_ = [this] {
+ 			tester_->continueExecutionPromise.get_future().wait();
+ 			std::this_thread::sleep_for(tester_->execTime);
+ 			return tester_->result;
+ 		};
+ 
+-		std::function<DTPP::Task::Result()> work_ = defaultWork_;
++		std::function<Task::Result()> work_ = defaultWork_;
+ 
+ 	};
+-}
+\ No newline at end of file
++}

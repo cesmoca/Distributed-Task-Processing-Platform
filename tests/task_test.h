@@ -3,10 +3,13 @@
 #include <functional>
 #include <future>
 #include <chrono>
+#include <memory>
 #include <mutex>
+#include <thread>
 
 #include <common/task.h>
 
+using namespace DTPP;
 
 namespace TestUtils {
 
@@ -17,16 +20,16 @@ namespace TestUtils {
 		struct Tester {
 		public:
 			std::chrono::milliseconds execTime = std::chrono::milliseconds(0);
-			DTPP::Task::Result result{ true, "Completed", 0 };
+			Task::Result result{ true, "Completed", 0 };
 			std::promise<void> continueExecutionPromise;
 		};
 
-		TaskTest(DTPP::Task::Id id): id_(id){}
+		TaskTest(Task::Id id): id_(id){}
 
-		DTPP::Task::Id id() const noexcept { return id_; }
+		Task::Id id() const noexcept { return id_; }
 
 		[[nodiscard]]
-		DTPP::Task::Result execute() const {
+		Task::Result execute() const {
 			work_();
 			return tester_->result;
 		}

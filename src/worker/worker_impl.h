@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <format>
+#include <memory>
 #include <string>
 #include <stdexcept>
 #include <thread>
@@ -22,8 +23,9 @@ namespace DTPP {
 
 	template<typename T>
 	void Worker<T>::stop(StopMode stopMode) {
-		thread_.request_stop();
+		std::lock_guard lock(mutex_);
 		stopMode_ = stopMode;
+		thread_.request_stop();
 	}
 
 	template<typename T>
@@ -50,7 +52,12 @@ namespace DTPP {
 				//     - if mode is FINISH_TASKS, process normally and on to the next one, until queue empty
 				//  - if not, process the task normally. It will wait even with empty queue
 				if (stopToken.stop_requested()) {
-					switch (stopMode_.value()) {
+					StopMode l_stopMode;
+					{
+						std::lock_guard lock(mutex_);
+						l_stopMode = stopMode_.value();
+					}
+					switch (l_stopMode) {
 					case StopMode::CANCEL_TASKS_AND_STOP: onTaskCancelled_(task->id());  break;
 					case StopMode::FINISH_ALL_TASKS_AND_STOP: performTask(task);  break;
 					default: throw std::logic_error("Unsupported StopMode");
@@ -101,8 +108,8 @@ namespace DTPP {
 
 		//}
 
-		std::cout << std::format("[Worker {} {} {}] Worker finished\n", id_, static_cast<const void*>(this), Utils::threadId());
 
+		std::cout << std::format("[Worker {} {} {}] Worker finished\n", id_, static_cast<const void*>(this), Utils::threadId());
 	}
 
 	template <typename T>

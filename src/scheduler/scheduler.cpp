@@ -8,6 +8,7 @@
 #include <iostream>
 #include <mutex>
 #include <chrono>
+#include <format>
 
 #include <common/task.h>
 
@@ -49,40 +50,48 @@ Scheduler::TaskInfo Scheduler::getTaskInfo(Task::Id id) {
 }
 
 
-void Scheduler::onTaskStarted(Task::Id id) {
+void Scheduler::onTaskStarted(Task::Id taskId) {
 	std::lock_guard lock(tasksRegistryMutex_);
-	auto it = tasksRegistry_.find(id);
+	auto it = tasksRegistry_.find(taskId);
 	if (it == tasksRegistry_.end()) {
-		throw std::out_of_range(std::format("Task with id {} not found", id));
+		throw std::out_of_range(std::format("Task with id {} not found", taskId));
 	}
 
 	it->second.taskInfo.startedAt = Task::Timestamp(std::chrono::steady_clock::now());
 	it->second.taskInfo.status = Scheduler::Status::Running;
+
+	std::cout << std::format("[Scheduler] Task {} started\n", taskId);
+
 };
 
-void Scheduler::onTaskCompleted(Task::Id id, Task::Result&& result) {
+void Scheduler::onTaskCompleted(Task::Id taskId, Task::Result&& result) {
 
 	std::lock_guard lock(tasksRegistryMutex_);
-	auto it = tasksRegistry_.find(id);
+	auto it = tasksRegistry_.find(taskId);
 	if (it == tasksRegistry_.end()) {
-		throw std::out_of_range(std::format("Task with id {} not found", id));
+		throw std::out_of_range(std::format("Task with id {} not found", taskId));
 	}
 
 	it->second.taskInfo.finishedAt = Task::Timestamp(std::chrono::steady_clock::now());
 	it->second.taskInfo.status = result.success ? Scheduler::Status::Completed : Scheduler::Status::Failed;
 	it->second.taskInfo.result = std::move(result);	
 	it->second.promiseTaskInfo.set_value(it->second.taskInfo);
+
+	std::cout << std::format("[Scheduler] Task {} completed\n", taskId);
 }
 
-void Scheduler::onTaskCancelled(Task::Id id) {
+void Scheduler::onTaskCancelled(Task::Id taskId) {
 	std::lock_guard lock(tasksRegistryMutex_);
-	auto it = tasksRegistry_.find(id);
+	auto it = tasksRegistry_.find(taskId);
 	if (it == tasksRegistry_.end()) {
-		throw std::out_of_range(std::format("Task with id {} not found", id));
+		throw std::out_of_range(std::format("Task with id {} not found", taskId));
 	}
 
 	it->second.taskInfo.finishedAt = Task::Timestamp(std::chrono::steady_clock::now());
 	it->second.taskInfo.status = Scheduler::Status::Cancelled;
+	it->second.promiseTaskInfo.set_value(it->second.taskInfo);
+
+	std::cout << std::format("[Scheduler] Task {} canceled\n", taskId);
 };
 
 Scheduler::~Scheduler() {

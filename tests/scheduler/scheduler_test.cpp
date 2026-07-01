@@ -8,9 +8,11 @@
 #include <common/task.h>
 #include <scheduler/scheduler.h>
 #include <test_utils.h>
+#include <task_test.h>
 
 using namespace DTPP;
 using namespace std::chrono_literals;
+using namespace TestUtils;
 
 void waitForTaskToComplete(Scheduler& scheduler, Task::Id taskId) {
 	auto timeout = std::chrono::seconds(3);
@@ -20,12 +22,12 @@ void waitForTaskToComplete(Scheduler& scheduler, Task::Id taskId) {
 }
 
 TEST(SchedulerTest, SubmitTask_CancelTasksAndWait_NotAllFinished) {
-	const int N_TASKS = 5;
-	const int N_WORKERS = 1;
+	const int N_TASKS = 8;
+	const int N_WORKERS = 2;
 
 	std::atomic<int> nTasksCompleted = 0;
 
-	auto task = [&nTasksCompleted]() {
+	auto taskWork = [&nTasksCompleted]() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 		nTasksCompleted++;
 		return Task::Result{ true, "Completed", 0 };
@@ -34,8 +36,8 @@ TEST(SchedulerTest, SubmitTask_CancelTasksAndWait_NotAllFinished) {
 	Scheduler scheduler(N_WORKERS);
 
 	// Let's submit the tasks, but wait for the first one
-	auto task0Future = scheduler.submitTask(task);;
-	for (int i = 1; i < N_TASKS; ++i) { scheduler.submitTask(task); }
+	auto task0Future = scheduler.submitTask(taskWork);
+	for (int i = 1; i < N_TASKS; ++i) { scheduler.submitTask(taskWork); }
 
 	// Check that there should be nTasks pending tasks
 	for (Task::Id id = 0; id < N_TASKS; ++id) {
@@ -124,7 +126,7 @@ TEST(SchedulerTest, TrackTask_UnexistingTask_ThrowsException) {
 TEST(SchedulerTest, SubmitTask_TaskCompletes_CorrectTimeFields) {
 
 	// Executing one task with one worker
-	auto task = []() {
+	auto taskWork = []() {
 		// Task that takes 150 ms to finish
 		std::this_thread::sleep_for(std::chrono::milliseconds(150));
 		return Task::Result{ true,	"Completed", 0 };;
@@ -134,7 +136,7 @@ TEST(SchedulerTest, SubmitTask_TaskCompletes_CorrectTimeFields) {
 
 	scheduler.start();
 
-	scheduler.submitTask(task);
+	scheduler.submitTask(taskWork);
 
 	EXPECT_TRUE(scheduler.getTaskStatus(0) != Scheduler::Status::Completed);
 
@@ -153,7 +155,7 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
 	std::promise<void> taskWorkPromise;
 
 	// Executing one task with one worker
-	auto task = [&]() {
+	auto taskWork = [&]() {
 		taskStartedPromise.set_value();;
 
 		// Let's simulate a task working for a long time
@@ -166,7 +168,7 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
 
 	scheduler.start();
 
-	scheduler.submitTask(task);
+	scheduler.submitTask(taskWork);
 
 	// Let's wait for the task to actually start
 	taskStartedPromise.get_future().wait();
@@ -210,3 +212,48 @@ TEST(SchedulerTest, SubmitTaskAndWait_WaitForTask_Completes) {
 	EXPECT_EQ(0, taskInfo.result.value().data);
 	EXPECT_TRUE(taskInfo.getDurationMs() > 0ms);
 }
+
+// TODO let's finish writing this one
+TEST(SchedulerTest, CancelAllTasks_WaitForTask_Fullfillspromise) {
+
+
+	// We create a cooperative task so that it can be cancelled
+	//  half way and report it. Not as completed or failed, but
+	//  as cancelled
+	auto taskWork = []() {
+		for (int i = 0; i < 100; ++i) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			// TODO here we check if the tasks has been cancelled cooperatively
+			// Return a resultState as completed, failed or cancelled
+		}
+		return Task::Result{ true, "Completed", 0 };
+	};
+
+	auto taskCompleted = std::make_unique<TaskTest>(0);
+	auto taskCompletedTester = taskCompleted->tester();
+
+	auto taskCancelled = std::make_unique<TaskTest>(0);
+	auto taskCancelledTester = taskCancelled->tester();
+
+	Scheduler scheduler(1);
+
+	//scheduler.submitTask()
+
+	scheduler.start();
+
+	// We push the task, but do not unlock it's execution yet
+	//// Let's wait until all the tasks have finished
+	//auto taskFuture = scheduler.submitTask(taskWork);
+
+	//taskFuture.value().wait();
+
+	//auto taskInfo = taskFuture.value().get();
+	//auto taskStatus = scheduler.getTaskStatus(0);
+
+	//EXPECT_EQ(Scheduler::Status::Completed, taskStatus);
+	//EXPECT_EQ(0, taskInfo.id);
+	//EXPECT_EQ(true, taskInfo.result.value().success);
+	//EXPECT_EQ("Completed", taskInfo.result.value().message);
+	//EXPECT_EQ(0, taskInfo.result.value().data);
+	//EXPECT_TRUE(taskInfo.getDurationMs() > 0ms);
+}

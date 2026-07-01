@@ -74,13 +74,13 @@ TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
 TEST(ThreadSafeQueueTest, Stop_PushTask_NotAdded) {
 	ThreadSafeQueue<Task> queue{};
 	
-	auto work = [&]() {
+	auto taskWork = [&]() {
 		return Task::Result{ true, "Completed", 0 };
 	};
 
 	ASSERT_TRUE(queue.empty());
 
-	queue.push(std::move(std::make_unique<Task>(0, work)));
+	queue.push(std::move(std::make_unique<Task>(0, taskWork)));
 
 	ASSERT_FALSE(queue.empty());
 
@@ -93,7 +93,7 @@ TEST(ThreadSafeQueueTest, Stop_PushTask_NotAdded) {
 
 	queue.stop();
 
-	queue.push(std::move(std::make_unique<Task>(0, work)));
+	queue.push(std::move(std::make_unique<Task>(0, taskWork)));
 
 	ASSERT_TRUE(queue.empty());
 }

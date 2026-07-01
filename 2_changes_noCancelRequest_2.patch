@@ -1,0 +1,493 @@
+diff --git a/src/common/task.h b/src/common/task.h
+index cc3acb0..04a9b56 100644
+--- a/src/common/task.h
++++ b/src/common/task.h
+@@ -42,7 +42,7 @@ namespace DTPP {
+ 			}
+ 		};
+ 
+-		template<typename Callable>
++		template <typename Callable>
+ 		Task(Id id, Callable&& work) : Task(id) {
+ 			work_ = std::forward<Callable>(work);
+ 		}
+@@ -55,7 +55,7 @@ namespace DTPP {
+ 
+ 	private:
+ 		Id id_;
+-		std::function<Result()> work_;
++		std::function<Task::Result()> work_;
+ 
+ 		Task(Id id) : id_(id) {}
+ 
+diff --git a/src/main.cpp b/src/main.cpp
+index 60e379f..4d42ef0 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -26,13 +26,14 @@ std::uint64_t randomInt(int min, int max)
+ 	return dist(gen);
+ }
+ 
+-std::function<DTPP::Task::Result()> createTask() {
++std::function<DTPP::Task::Result()> createWork() {
+ 
+ 	return []() {
+ 
+-		int waitTimeMs = randomInt(500, 1500);
+-		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
+-
++		int waitTimeMs = randomInt(200, 500);
++		for (int i = 0; i < 10; ++i) {
++			std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
++		}
+ 		return DTPP::Task::Result{ true, "Task completed successfully", 0 };
+ 	};
+ }
+@@ -49,7 +50,7 @@ int main(int argc, char* argv[]) {
+ 
+ 	// Let's simulate tasks coming to the queue
+ 	for (std::uint64_t i = 0; i < nTasks; ++i) {
+-		tasksFutures.at(i) = scheduler.submitTask(createTask());
++		tasksFutures.at(i) = scheduler.submitTask(createWork());
+ 		int waitTimeMs = randomInt(100, 500);
+ 		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
+ 	}
+@@ -58,9 +59,10 @@ int main(int argc, char* argv[]) {
+ 	auto& task0Promise = tasksFutures.at(0);
+ 
+ 	task0Promise.value().wait();
+-	auto task0Info= task0Promise.value().get();
++	auto task0Info = task0Promise.value().get();
+ 
+ 	// Then cancel them all
++	std::cout << std::format("[Main Loop] Cancelling tasks\n");
+ 	scheduler.cancelTasksAndWait();
+ 
+ 	// Show tasks results
+@@ -71,7 +73,7 @@ int main(int argc, char* argv[]) {
+ 		std::cout << taskInfo.toString() << std::endl;
+ 	}
+ 
+-	std::cout << std::format("[Main Loop] End reached\n");
++		std::cout << std::format("[Main Loop] End reached\n");
+ 
+-	return 0;
+-}
++		return 0;
++	}
+diff --git a/src/scheduler/scheduler.cpp b/src/scheduler/scheduler.cpp
+index 4562268..e6814cc 100644
+--- a/src/scheduler/scheduler.cpp
++++ b/src/scheduler/scheduler.cpp
+@@ -8,6 +8,7 @@
+ #include <iostream>
+ #include <mutex>
+ #include <chrono>
++#include <format>
+ 
+ #include <common/task.h>
+ 
+@@ -49,40 +50,48 @@ Scheduler::TaskInfo Scheduler::getTaskInfo(Task::Id id) {
+ }
+ 
+ 
+-void Scheduler::onTaskStarted(Task::Id id) {
++void Scheduler::onTaskStarted(Task::Id taskId) {
+ 	std::lock_guard lock(tasksRegistryMutex_);
+-	auto it = tasksRegistry_.find(id);
++	auto it = tasksRegistry_.find(taskId);
+ 	if (it == tasksRegistry_.end()) {
+-		throw std::out_of_range(std::format("Task with id {} not found", id));
++		throw std::out_of_range(std::format("Task with id {} not found", taskId));
+ 	}
+ 
+ 	it->second.taskInfo.startedAt = Task::Timestamp(std::chrono::steady_clock::now());
+ 	it->second.taskInfo.status = Scheduler::Status::Running;
++
++	std::cout << std::format("[Scheduler] Task {} started\n", taskId);
++
+ };
+ 
+-void Scheduler::onTaskCompleted(Task::Id id, Task::Result&& result) {
++void Scheduler::onTaskCompleted(Task::Id taskId, Task::Result&& result) {
+ 
+ 	std::lock_guard lock(tasksRegistryMutex_);
+-	auto it = tasksRegistry_.find(id);
++	auto it = tasksRegistry_.find(taskId);
+ 	if (it == tasksRegistry_.end()) {
+-		throw std::out_of_range(std::format("Task with id {} not found", id));
++		throw std::out_of_range(std::format("Task with id {} not found", taskId));
+ 	}
+ 
+ 	it->second.taskInfo.finishedAt = Task::Timestamp(std::chrono::steady_clock::now());
+ 	it->second.taskInfo.status = result.success ? Scheduler::Status::Completed : Scheduler::Status::Failed;
+ 	it->second.taskInfo.result = std::move(result);	
+ 	it->second.promiseTaskInfo.set_value(it->second.taskInfo);
++
++	std::cout << std::format("[Scheduler] Task {} completed\n", taskId);
+ }
+ 
+-void Scheduler::onTaskCancelled(Task::Id id) {
++void Scheduler::onTaskCancelled(Task::Id taskId) {
+ 	std::lock_guard lock(tasksRegistryMutex_);
+-	auto it = tasksRegistry_.find(id);
++	auto it = tasksRegistry_.find(taskId);
+ 	if (it == tasksRegistry_.end()) {
+-		throw std::out_of_range(std::format("Task with id {} not found", id));
++		throw std::out_of_range(std::format("Task with id {} not found", taskId));
+ 	}
+ 
+ 	it->second.taskInfo.finishedAt = Task::Timestamp(std::chrono::steady_clock::now());
+ 	it->second.taskInfo.status = Scheduler::Status::Cancelled;
++	it->second.promiseTaskInfo.set_value(it->second.taskInfo);
++
++	std::cout << std::format("[Scheduler] Task {} canceled\n", taskId);
+ };
+ 
+ Scheduler::~Scheduler() {
+diff --git a/src/scheduler/scheduler.h b/src/scheduler/scheduler.h
+index af3209c..4ed929d 100644
+--- a/src/scheduler/scheduler.h
++++ b/src/scheduler/scheduler.h
+@@ -54,6 +54,7 @@ namespace DTPP {
+ 				case Scheduler::Status::Running: statusStr = "Running"; break;
+ 				case Scheduler::Status::Completed: statusStr = "Completed"; break;
+ 				case Scheduler::Status::Failed: statusStr = "Failed"; break;
++				case Scheduler::Status::Cancelled: statusStr = "Cancelled"; break;
+ 				default: throw std::logic_error("Not all Task::Result implemented in toString");
+ 				}
+ 
+diff --git a/src/worker/worker.h b/src/worker/worker.h
+index 764eaae..c784bd9 100644
+--- a/src/worker/worker.h
++++ b/src/worker/worker.h
+@@ -3,6 +3,7 @@
+ #include <cstdint>
+ #include <functional>
+ #include <atomic>
++#include <optional>
+ #include <utility>
+ 
+ #include <common/task.h>
+@@ -54,6 +55,7 @@ namespace DTPP {
+ 		ThreadSafeQueue<T>& queue_;
+ 		std::jthread thread_;
+ 		std::optional<StopMode> stopMode_;
++		std::mutex mutex_;
+ 		const std::function<void(Task::Id)> onTaskStarted_;
+ 		const std::function<void(Task::Id, Task::Result&&)> onTaskCompleted_;
+ 		const std::function<void(Task::Id)> onTaskCancelled_;
+diff --git a/src/worker/worker_impl.h b/src/worker/worker_impl.h
+index b1bb967..09c247f 100644
+--- a/src/worker/worker_impl.h
++++ b/src/worker/worker_impl.h
+@@ -1,6 +1,7 @@
+ #pragma once
+ #include <iostream>
+ #include <format>
++#include <memory>
+ #include <string>
+ #include <stdexcept>
+ #include <thread>
+@@ -22,8 +23,9 @@ namespace DTPP {
+ 
+ 	template<typename T>
+ 	void Worker<T>::stop(StopMode stopMode) {
+-		thread_.request_stop();
++		std::lock_guard lock(mutex_);
+ 		stopMode_ = stopMode;
++		thread_.request_stop();
+ 	}
+ 
+ 	template<typename T>
+@@ -50,7 +52,12 @@ namespace DTPP {
+ 				//     - if mode is FINISH_TASKS, process normally and on to the next one, until queue empty
+ 				//  - if not, process the task normally. It will wait even with empty queue
+ 				if (stopToken.stop_requested()) {
+-					switch (stopMode_.value()) {
++					StopMode l_stopMode;
++					{
++						std::lock_guard lock(mutex_);
++						l_stopMode = stopMode_.value();
++					}
++					switch (l_stopMode) {
+ 					case StopMode::CANCEL_TASKS_AND_STOP: onTaskCancelled_(task->id());  break;
+ 					case StopMode::FINISH_ALL_TASKS_AND_STOP: performTask(task);  break;
+ 					default: throw std::logic_error("Unsupported StopMode");
+@@ -101,8 +108,8 @@ namespace DTPP {
+ 
+ 		//}
+ 
+-		std::cout << std::format("[Worker {} {} {}] Worker finished\n", id_, static_cast<const void*>(this), Utils::threadId());
+ 
++		std::cout << std::format("[Worker {} {} {}] Worker finished\n", id_, static_cast<const void*>(this), Utils::threadId());
+ 	}
+ 
+ 	template <typename T>
+diff --git a/src/worker/worker_pool.h b/src/worker/worker_pool.h
+index 7afb5b9..bfeddb7 100644
+--- a/src/worker/worker_pool.h
++++ b/src/worker/worker_pool.h
+@@ -4,6 +4,7 @@
+ #include <atomic>
+ #include <functional>
+ #include <memory>
++#include <utility>
+ 
+ #include <common/task.h>
+ #include <common/thread_safe_queue.h>
+diff --git a/tests/common/thread_safe_queue_test.cpp b/tests/common/thread_safe_queue_test.cpp
+index b5476b5..8eb3a0f 100644
+--- a/tests/common/thread_safe_queue_test.cpp
++++ b/tests/common/thread_safe_queue_test.cpp
+@@ -74,13 +74,13 @@ TEST(ThreadSafeQueueTest, WaitAndPop_WaitsForTasks_Completes) {
+ TEST(ThreadSafeQueueTest, Stop_PushTask_NotAdded) {
+ 	ThreadSafeQueue<Task> queue{};
+ 	
+-	auto work = [&]() {
++	auto taskWork = [&]() {
+ 		return Task::Result{ true, "Completed", 0 };
+ 	};
+ 
+ 	ASSERT_TRUE(queue.empty());
+ 
+-	queue.push(std::move(std::make_unique<Task>(0, work)));
++	queue.push(std::move(std::make_unique<Task>(0, taskWork)));
+ 
+ 	ASSERT_FALSE(queue.empty());
+ 
+@@ -93,7 +93,7 @@ TEST(ThreadSafeQueueTest, Stop_PushTask_NotAdded) {
+ 
+ 	queue.stop();
+ 
+-	queue.push(std::move(std::make_unique<Task>(0, work)));
++	queue.push(std::move(std::make_unique<Task>(0, taskWork)));
+ 
+ 	ASSERT_TRUE(queue.empty());
+ }
+diff --git a/tests/scheduler/scheduler_test.cpp b/tests/scheduler/scheduler_test.cpp
+index bdb3f8b..8d494dd 100644
+--- a/tests/scheduler/scheduler_test.cpp
++++ b/tests/scheduler/scheduler_test.cpp
+@@ -8,9 +8,11 @@
+ #include <common/task.h>
+ #include <scheduler/scheduler.h>
+ #include <test_utils.h>
++#include <task_test.h>
+ 
+ using namespace DTPP;
+ using namespace std::chrono_literals;
++using namespace TestUtils;
+ 
+ void waitForTaskToComplete(Scheduler& scheduler, Task::Id taskId) {
+ 	auto timeout = std::chrono::seconds(3);
+@@ -20,12 +22,12 @@ void waitForTaskToComplete(Scheduler& scheduler, Task::Id taskId) {
+ }
+ 
+ TEST(SchedulerTest, SubmitTask_CancelTasksAndWait_NotAllFinished) {
+-	const int N_TASKS = 5;
+-	const int N_WORKERS = 1;
++	const int N_TASKS = 8;
++	const int N_WORKERS = 2;
+ 
+ 	std::atomic<int> nTasksCompleted = 0;
+ 
+-	auto task = [&nTasksCompleted]() {
++	auto taskWork = [&nTasksCompleted]() {
+ 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+ 		nTasksCompleted++;
+ 		return Task::Result{ true, "Completed", 0 };
+@@ -34,8 +36,8 @@ TEST(SchedulerTest, SubmitTask_CancelTasksAndWait_NotAllFinished) {
+ 	Scheduler scheduler(N_WORKERS);
+ 
+ 	// Let's submit the tasks, but wait for the first one
+-	auto task0Future = scheduler.submitTask(task);;
+-	for (int i = 1; i < N_TASKS; ++i) { scheduler.submitTask(task); }
++	auto task0Future = scheduler.submitTask(taskWork);
++	for (int i = 1; i < N_TASKS; ++i) { scheduler.submitTask(taskWork); }
+ 
+ 	// Check that there should be nTasks pending tasks
+ 	for (Task::Id id = 0; id < N_TASKS; ++id) {
+@@ -124,7 +126,7 @@ TEST(SchedulerTest, TrackTask_UnexistingTask_ThrowsException) {
+ TEST(SchedulerTest, SubmitTask_TaskCompletes_CorrectTimeFields) {
+ 
+ 	// Executing one task with one worker
+-	auto task = []() {
++	auto taskWork = []() {
+ 		// Task that takes 150 ms to finish
+ 		std::this_thread::sleep_for(std::chrono::milliseconds(150));
+ 		return Task::Result{ true,	"Completed", 0 };;
+@@ -134,7 +136,7 @@ TEST(SchedulerTest, SubmitTask_TaskCompletes_CorrectTimeFields) {
+ 
+ 	scheduler.start();
+ 
+-	scheduler.submitTask(task);
++	scheduler.submitTask(taskWork);
+ 
+ 	EXPECT_TRUE(scheduler.getTaskStatus(0) != Scheduler::Status::Completed);
+ 
+@@ -153,7 +155,7 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
+ 	std::promise<void> taskWorkPromise;
+ 
+ 	// Executing one task with one worker
+-	auto task = [&]() {
++	auto taskWork = [&]() {
+ 		taskStartedPromise.set_value();;
+ 
+ 		// Let's simulate a task working for a long time
+@@ -166,7 +168,7 @@ TEST(SchedulerTest, SubmitTask_TaskDoesNotComplete_DoesNotHaveDuration) {
+ 
+ 	scheduler.start();
+ 
+-	scheduler.submitTask(task);
++	scheduler.submitTask(taskWork);
+ 
+ 	// Let's wait for the task to actually start
+ 	taskStartedPromise.get_future().wait();
+@@ -210,3 +212,48 @@ TEST(SchedulerTest, SubmitTaskAndWait_WaitForTask_Completes) {
+ 	EXPECT_EQ(0, taskInfo.result.value().data);
+ 	EXPECT_TRUE(taskInfo.getDurationMs() > 0ms);
+ }
++
++// TODO let's finish writing this one
++TEST(SchedulerTest, CancelAllTasks_WaitForTask_Fullfillspromise) {
++
++
++	// We create a cooperative task so that it can be cancelled
++	//  half way and report it. Not as completed or failed, but
++	//  as cancelled
++	auto taskWork = []() {
++		for (int i = 0; i < 100; ++i) {
++			std::this_thread::sleep_for(std::chrono::milliseconds(50));
++			// TODO here we check if the tasks has been cancelled cooperatively
++			// Return a resultState as completed, failed or cancelled
++		}
++		return Task::Result{ true, "Completed", 0 };
++	};
++
++	auto taskCompleted = std::make_unique<TaskTest>(0);
++	auto taskCompletedTester = taskCompleted->tester();
++
++	auto taskCancelled = std::make_unique<TaskTest>(0);
++	auto taskCancelledTester = taskCancelled->tester();
++
++	Scheduler scheduler(1);
++
++	//scheduler.submitTask()
++
++	scheduler.start();
++
++	// We push the task, but do not unlock it's execution yet
++	//// Let's wait until all the tasks have finished
++	//auto taskFuture = scheduler.submitTask(taskWork);
++
++	//taskFuture.value().wait();
++
++	//auto taskInfo = taskFuture.value().get();
++	//auto taskStatus = scheduler.getTaskStatus(0);
++
++	//EXPECT_EQ(Scheduler::Status::Completed, taskStatus);
++	//EXPECT_EQ(0, taskInfo.id);
++	//EXPECT_EQ(true, taskInfo.result.value().success);
++	//EXPECT_EQ("Completed", taskInfo.result.value().message);
++	//EXPECT_EQ(0, taskInfo.result.value().data);
++	//EXPECT_TRUE(taskInfo.getDurationMs() > 0ms);
++}
+\ No newline at end of file
+diff --git a/tests/task_test.h b/tests/task_test.h
+index 23028be..a40c1dd 100644
+--- a/tests/task_test.h
++++ b/tests/task_test.h
+@@ -3,10 +3,13 @@
+ #include <functional>
+ #include <future>
+ #include <chrono>
++#include <memory>
+ #include <mutex>
++#include <thread>
+ 
+ #include <common/task.h>
+ 
++using namespace DTPP;
+ 
+ namespace TestUtils {
+ 
+@@ -17,16 +20,16 @@ namespace TestUtils {
+ 		struct Tester {
+ 		public:
+ 			std::chrono::milliseconds execTime = std::chrono::milliseconds(0);
+-			DTPP::Task::Result result{ true, "Completed", 0 };
++			Task::Result result{ true, "Completed", 0 };
+ 			std::promise<void> continueExecutionPromise;
+ 		};
+ 
+-		TaskTest(DTPP::Task::Id id): id_(id){}
++		TaskTest(Task::Id id): id_(id){}
+ 
+-		DTPP::Task::Id id() const noexcept { return id_; }
++		Task::Id id() const noexcept { return id_; }
+ 
+ 		[[nodiscard]]
+-		DTPP::Task::Result execute() const {
++		Task::Result execute() const {
+ 			work_();
+ 			return tester_->result;
+ 		}
+@@ -36,17 +39,17 @@ namespace TestUtils {
+ 		}
+ 
+ 	private:
+-		DTPP::Task::Id id_;
++		Task::Id id_;
+ 		std::shared_ptr<Tester> tester_ = std::make_shared<Tester>();
+ 
+ 
+-		std::function<DTPP::Task::Result()> defaultWork_ = [this] {
++		std::function<Task::Result()> defaultWork_ = [this] {
+ 			tester_->continueExecutionPromise.get_future().wait();
+ 			std::this_thread::sleep_for(tester_->execTime);
+ 			return tester_->result;
+ 		};
+ 
+-		std::function<DTPP::Task::Result()> work_ = defaultWork_;
++		std::function<Task::Result()> work_ = defaultWork_;
+ 
+ 	};
+-}
+\ No newline at end of file
++}
+diff --git a/tests/worker/worker_pool_test.cpp b/tests/worker/worker_pool_test.cpp
+index 239971a..c47c9e1 100644
+--- a/tests/worker/worker_pool_test.cpp
++++ b/tests/worker/worker_pool_test.cpp
+@@ -22,7 +22,7 @@ TEST(WorkerPool, StartStop_Completes) {
+ 	workerPool.start();
+ 
+ 	queue.stop(); // The workers are waiting at the condition var
+-	workerPool.stopAndWait(DTPP::Worker<Task>::StopMode::FINISH_ALL_TASKS_AND_STOP);
++	workerPool.stopAndWait(Worker<Task>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+ 
+ 	std::cout << std::format("WorkerPoolTest ended.\n");
+ }
+diff --git a/tests/worker/worker_test.cpp b/tests/worker/worker_test.cpp
+index 086d0f5..58b5337 100644
+--- a/tests/worker/worker_test.cpp
++++ b/tests/worker/worker_test.cpp
+@@ -72,7 +72,7 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
+ 
+ 	EXPECT_EQ(false, taskCompletedCalled);
+ 
+-	worker.stop(DTPP::Worker<TaskTest>::StopMode::FINISH_ALL_TASKS_AND_STOP);
++	worker.stop(Worker<TaskTest>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+ 	worker.waitUntilFinished();
+ 
+ 	EXPECT_EQ(true, taskCompletedCalled);
+@@ -130,7 +130,7 @@ TEST(WorkerTest, CancelTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
+ 
+ 	EXPECT_EQ(false, taskCompletedCalled);
+ 
+-	worker.stop(DTPP::Worker<TaskTest>::StopMode::CANCEL_TASKS_AND_STOP);
++	worker.stop(Worker<TaskTest>::StopMode::CANCEL_TASKS_AND_STOP);
+ 	worker.waitUntilFinished();
+ 
+ 	EXPECT_EQ(true, taskCompletedCalled);

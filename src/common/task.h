@@ -42,7 +42,7 @@ namespace DTPP {
 			}
 		};
 
-		template<typename Callable>
+		template <typename Callable>
 		Task(Id id, Callable&& work) : Task(id) {
 			work_ = std::forward<Callable>(work);
 		}
@@ -55,7 +55,7 @@ namespace DTPP {
 
 	private:
 		Id id_;
-		std::function<Result()> work_;
+		std::function<Task::Result()> work_;
 
 		Task(Id id) : id_(id) {}
 

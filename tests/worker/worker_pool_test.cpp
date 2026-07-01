@@ -22,7 +22,7 @@ TEST(WorkerPool, StartStop_Completes) {
 	workerPool.start();
 
 	queue.stop(); // The workers are waiting at the condition var
-	workerPool.stopAndWait(DTPP::Worker<Task>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+	workerPool.stopAndWait(Worker<Task>::StopMode::FINISH_ALL_TASKS_AND_STOP);
 
 	std::cout << std::format("WorkerPoolTest ended.\n");
 }

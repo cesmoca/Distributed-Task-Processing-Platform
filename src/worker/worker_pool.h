@@ -4,6 +4,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <utility>
 
 #include <common/task.h>
 #include <common/thread_safe_queue.h>

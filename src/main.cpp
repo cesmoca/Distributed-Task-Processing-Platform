@@ -26,13 +26,14 @@ std::uint64_t randomInt(int min, int max)
 	return dist(gen);
 }
 
-std::function<DTPP::Task::Result()> createTask() {
+std::function<DTPP::Task::Result()> createWork() {
 
 	return []() {
 
-		int waitTimeMs = randomInt(500, 1500);
-		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
-
+		int waitTimeMs = randomInt(200, 500);
+		for (int i = 0; i < 10; ++i) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
+		}
 		return DTPP::Task::Result{ true, "Task completed successfully", 0 };
 	};
 }
@@ -49,7 +50,7 @@ int main(int argc, char* argv[]) {
 
 	// Let's simulate tasks coming to the queue
 	for (std::uint64_t i = 0; i < nTasks; ++i) {
-		tasksFutures.at(i) = scheduler.submitTask(createTask());
+		tasksFutures.at(i) = scheduler.submitTask(createWork());
 		int waitTimeMs = randomInt(100, 500);
 		std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMs));
 	}
@@ -58,9 +59,10 @@ int main(int argc, char* argv[]) {
 	auto& task0Promise = tasksFutures.at(0);
 
 	task0Promise.value().wait();
-	auto task0Info= task0Promise.value().get();
+	auto task0Info = task0Promise.value().get();
 
 	// Then cancel them all
+	std::cout << std::format("[Main Loop] Cancelling tasks\n");
 	scheduler.cancelTasksAndWait();
 
 	// Show tasks results
@@ -71,7 +73,7 @@ int main(int argc, char* argv[]) {
 		std::cout << taskInfo.toString() << std::endl;
 	}
 
-	std::cout << std::format("[Main Loop] End reached\n");
+		std::cout << std::format("[Main Loop] End reached\n");
 
-	return 0;
-}
+		return 0;
+	}

@@ -54,6 +54,7 @@ namespace DTPP {
 				case Scheduler::Status::Running: statusStr = "Running"; break;
 				case Scheduler::Status::Completed: statusStr = "Completed"; break;
 				case Scheduler::Status::Failed: statusStr = "Failed"; break;
+				case Scheduler::Status::Cancelled: statusStr = "Cancelled"; break;
 				default: throw std::logic_error("Not all Task::Result implemented in toString");
 				}
 

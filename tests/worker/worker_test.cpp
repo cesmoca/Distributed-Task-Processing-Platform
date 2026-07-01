@@ -72,7 +72,7 @@ TEST(WorkerTest, FinishAllTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 
 	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stop(DTPP::Worker<TaskTest>::StopMode::FINISH_ALL_TASKS_AND_STOP);
+	worker.stop(Worker<TaskTest>::StopMode::FINISH_ALL_TASKS_AND_STOP);
 	worker.waitUntilFinished();
 
 	EXPECT_EQ(true, taskCompletedCalled);
@@ -130,7 +130,7 @@ TEST(WorkerTest, CancelTasksAndStop_SubmitsTwoTasks_AllTaksComplete) {
 
 	EXPECT_EQ(false, taskCompletedCalled);
 
-	worker.stop(DTPP::Worker<TaskTest>::StopMode::CANCEL_TASKS_AND_STOP);
+	worker.stop(Worker<TaskTest>::StopMode::CANCEL_TASKS_AND_STOP);
 	worker.waitUntilFinished();
 
 	EXPECT_EQ(true, taskCompletedCalled);
